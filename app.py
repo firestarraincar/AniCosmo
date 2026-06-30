@@ -302,7 +302,6 @@ def home():
                 color: #ffd93d;
             }
 
-            /* Модальное окно для удаления */
             .modal {
                 display: none;
                 position: fixed;
@@ -406,16 +405,16 @@ def home():
                 <div class="card">
                     <h3>➕ Добавить выигрыш</h3>
                     <div class="form-group">
-                        <input type="text" id="winCode" placeholder="Код (132547)" value="132547">
+                        <input type="text" id="winCode" placeholder="Код (132547)">
                         <input type="text" id="winUser" placeholder="Имя участника">
                         <input type="text" id="winPrize" placeholder="Что выиграл">
-                        <input type="number" id="winValue" placeholder="Ценность приза (число)">
+                        <input type="number" id="winValue" placeholder="Ценность в ПТ">
                     </div>
                     <div class="form-group">
                         <input type="text" id="winTags" placeholder="Теги (через запятую)">
                         <button class="btn-submit" onclick="addWin()">Опубликовать</button>
                     </div>
-                    <div class="code-hint">🔑 Код для публикации: 132547</div>
+                    <div class="code-hint">🔑 Код для публикации: 132547 (введите в поле выше)</div>
                 </div>
 
                 <!-- Недавние выигрыши -->
@@ -428,7 +427,7 @@ def home():
 
                 <!-- Лидерборд -->
                 <div class="card">
-                    <h3>🏆 Лидерборд (по ценности призов)</h3>
+                    <h3>🏆 Лидерборд (по ценности призов в ПТ)</h3>
                     <div id="leaderboard">
                         <div style="opacity:0.4; text-align:center; padding:20px;">Загрузка...</div>
                     </div>
@@ -520,7 +519,7 @@ def home():
                         </div>
                         <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
                             <span class="win-prize">${w.prize}</span>
-                            <span class="win-value">${w.value} ₽</span>
+                            <span class="win-value">${w.value} ПТ</span>
                             <span class="win-date">${w.date}</span>
                             <button class="btn-delete" onclick="openDeleteModal(${w.id})">✕</button>
                         </div>
@@ -550,14 +549,14 @@ def home():
                 }
 
                 let html = `<table class="leaderboard-table">
-                    <tr><th>#</th><th>Участник</th><th>Кол-во</th><th>Сумма</th></tr>`;
+                    <tr><th>#</th><th>Участник</th><th>Кол-во</th><th>Сумма ПТ</th></tr>`;
                 sorted.forEach(([user, data], i) => {
                     const rank = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i+1}`;
                     html += `<tr>
                         <td class="rank">${rank}</td>
                         <td><strong>${user}</strong></td>
                         <td>${data.count} раз</td>
-                        <td class="total">${data.total} ₽</td>
+                        <td class="total">${data.total} ПТ</td>
                     </tr>`;
                 });
                 html += '</table>';
@@ -572,12 +571,13 @@ def home():
                 const value = parseInt(document.getElementById('winValue').value);
                 const tagsRaw = document.getElementById('winTags').value.trim();
 
+                // ПРОВЕРКА КОДА
                 if (code !== '132547') {
-                    showToast('❌ Неверный код!', 'error');
+                    showToast('❌ Неверный код! Нужно ввести 132547', 'error');
                     return;
                 }
                 if (!user || !prize || !value) {
-                    showToast('❌ Заполните все поля (имя, приз, ценность)!', 'error');
+                    showToast('❌ Заполните все поля (имя, приз, ценность в ПТ)!', 'error');
                     return;
                 }
                 if (value <= 0) {
@@ -596,6 +596,7 @@ def home():
                     const result = await res.json();
                     if (result.success) {
                         showToast('✅ Выигрыш добавлен!', 'success');
+                        document.getElementById('winCode').value = '';
                         document.getElementById('winUser').value = '';
                         document.getElementById('winPrize').value = '';
                         document.getElementById('winValue').value = '';
@@ -625,8 +626,9 @@ def home():
             // Подтвердить удаление
             async function confirmDelete() {
                 const code = document.getElementById('deleteCodeInput').value.trim();
+                // ПРОВЕРКА КОДА
                 if (code !== '132547') {
-                    showToast('❌ Неверный код!', 'error');
+                    showToast('❌ Неверный код! Нужно ввести 132547', 'error');
                     return;
                 }
                 if (deleteTargetId === null) return;
