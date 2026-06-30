@@ -4,11 +4,8 @@ import json
 from datetime import datetime
 
 app = Flask(__name__)
-
-# Файл для хранения данных
 DATA_FILE = 'wins.json'
 
-# Загружаем данные из файла
 def load_data():
     try:
         with open(DATA_FILE, 'r', encoding='utf-8') as f:
@@ -16,7 +13,6 @@ def load_data():
     except:
         return {'wins': [], 'next_id': 1}
 
-# Сохраняем данные в файл
 def save_data(data):
     with open(DATA_FILE, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
@@ -52,7 +48,7 @@ def home():
                 z-index: 1;
                 max-width: 1100px;
                 margin: 0 auto;
-                padding: 40px 20px;
+                padding: 40px 20px 100px 20px;
             }
 
             #screen-main {
@@ -112,15 +108,6 @@ def home():
                 opacity: 1;
             }
 
-            .section-title {
-                font-size: 32px;
-                font-weight: 300;
-                text-align: center;
-                margin-bottom: 30px;
-                letter-spacing: 2px;
-                text-shadow: 0 0 30px rgba(0,0,0,0.5);
-            }
-
             .card {
                 background: rgba(255,255,255,0.06);
                 backdrop-filter: blur(10px);
@@ -135,51 +122,6 @@ def home():
                 margin-bottom: 15px;
                 letter-spacing: 1px;
                 color: #ff6b6b;
-            }
-
-            .form-group {
-                display: flex;
-                gap: 12px;
-                flex-wrap: wrap;
-                margin-bottom: 12px;
-            }
-            .form-group input {
-                flex: 1;
-                min-width: 150px;
-                padding: 12px 16px;
-                border-radius: 10px;
-                border: 1px solid rgba(255,255,255,0.15);
-                background: rgba(255,255,255,0.06);
-                color: white;
-                font-size: 15px;
-                transition: border 0.3s;
-            }
-            .form-group input:focus {
-                outline: none;
-                border-color: #ff6b6b;
-            }
-            .form-group input::placeholder {
-                color: rgba(255,255,255,0.4);
-            }
-            .form-group .btn-submit {
-                padding: 12px 30px;
-                background: #ff6b6b;
-                border: none;
-                border-radius: 10px;
-                color: white;
-                font-size: 16px;
-                font-weight: 600;
-                cursor: pointer;
-                transition: background 0.3s;
-            }
-            .form-group .btn-submit:hover {
-                background: #ee5a24;
-            }
-
-            .code-hint {
-                color: rgba(255,255,255,0.4);
-                font-size: 13px;
-                margin-top: 5px;
             }
 
             .leaderboard-table {
@@ -282,26 +224,59 @@ def home():
                 border-radius: 10px;
                 margin-bottom: 15px;
                 display: none;
+                position: fixed;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                z-index: 200;
+                max-width: 90%;
+                text-align: center;
             }
             .toast.success {
                 display: block;
-                background: rgba(107, 203, 119, 0.2);
+                background: rgba(107, 203, 119, 0.95);
                 border: 1px solid rgba(107, 203, 119, 0.3);
-                color: #6bcb77;
+                color: white;
             }
             .toast.error {
                 display: block;
-                background: rgba(255, 107, 107, 0.2);
+                background: rgba(255, 107, 107, 0.95);
                 border: 1px solid rgba(255, 107, 107, 0.3);
-                color: #ff6b6b;
+                color: white;
             }
             .toast.info {
                 display: block;
-                background: rgba(255, 217, 61, 0.15);
+                background: rgba(255, 217, 61, 0.95);
                 border: 1px solid rgba(255, 217, 61, 0.2);
-                color: #ffd93d;
+                color: #1a1a2e;
             }
 
+            /* ПЛАВАЮЩАЯ КНОПКА ДОБАВИТЬ */
+            .fab {
+                position: fixed;
+                bottom: 30px;
+                right: 30px;
+                width: 64px;
+                height: 64px;
+                border-radius: 50%;
+                background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+                color: white;
+                border: none;
+                font-size: 32px;
+                cursor: pointer;
+                box-shadow: 0 4px 20px rgba(238, 90, 36, 0.4);
+                transition: all 0.3s;
+                z-index: 50;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .fab:hover {
+                transform: scale(1.1);
+                box-shadow: 0 6px 30px rgba(238, 90, 36, 0.6);
+            }
+
+            /* МОДАЛЬНОЕ ОКНО ДЛЯ ДОБАВЛЕНИЯ */
             .modal {
                 display: none;
                 position: fixed;
@@ -319,34 +294,47 @@ def home():
                 backdrop-filter: blur(10px);
                 padding: 30px;
                 border-radius: 16px;
-                max-width: 400px;
+                max-width: 500px;
                 width: 90%;
-                text-align: center;
                 border: 1px solid rgba(255,255,255,0.1);
             }
             .modal-content h3 {
                 margin-bottom: 15px;
                 color: #ff6b6b;
+                text-align: center;
+                font-size: 24px;
             }
-            .modal-content input {
-                width: 100%;
-                padding: 12px;
+            .modal-content .form-group {
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+                margin-bottom: 15px;
+            }
+            .modal-content .form-group input {
+                padding: 12px 16px;
                 border-radius: 10px;
                 border: 1px solid rgba(255,255,255,0.15);
                 background: rgba(255,255,255,0.06);
                 color: white;
-                font-size: 16px;
-                margin-bottom: 15px;
-                text-align: center;
+                font-size: 15px;
+                width: 100%;
             }
-            .modal-content input:focus {
+            .modal-content .form-group input:focus {
                 outline: none;
                 border-color: #ff6b6b;
+            }
+            .modal-content .form-group input::placeholder {
+                color: rgba(255,255,255,0.4);
+            }
+            .modal-content .form-group input:disabled {
+                opacity: 0.4;
+                cursor: not-allowed;
             }
             .modal-buttons {
                 display: flex;
                 gap: 12px;
                 justify-content: center;
+                margin-top: 10px;
             }
             .modal-buttons button {
                 padding: 10px 30px;
@@ -356,12 +344,16 @@ def home():
                 cursor: pointer;
                 transition: all 0.3s;
             }
-            .modal-buttons .btn-confirm {
+            .modal-buttons .btn-submit-modal {
                 background: #ff6b6b;
                 color: white;
             }
-            .modal-buttons .btn-confirm:hover {
+            .modal-buttons .btn-submit-modal:hover:not(:disabled) {
                 background: #ee5a24;
+            }
+            .modal-buttons .btn-submit-modal:disabled {
+                opacity: 0.3;
+                cursor: not-allowed;
             }
             .modal-buttons .btn-cancel {
                 background: rgba(255,255,255,0.1);
@@ -370,11 +362,22 @@ def home():
             .modal-buttons .btn-cancel:hover {
                 background: rgba(255,255,255,0.15);
             }
+            .modal-content .code-status {
+                text-align: center;
+                font-size: 14px;
+                margin-top: 5px;
+                min-height: 24px;
+            }
+            .modal-content .code-status.success {
+                color: #6bcb77;
+            }
+            .modal-content .code-status.error {
+                color: #ff6b6b;
+            }
 
             @media (max-width: 600px) {
                 #screen-main h1 { font-size: 32px; }
-                .section-title { font-size: 24px; }
-                .form-group input { min-width: 100%; }
+                .fab { width: 56px; height: 56px; font-size: 28px; bottom: 20px; right: 20px; }
             }
         </style>
     </head>
@@ -397,24 +400,6 @@ def home():
                 <div style="text-align:center; margin-bottom:30px;">
                     <h2 style="font-size:38px; font-weight:300; letter-spacing:2px;">✨ Добро пожаловать!</h2>
                     <p style="opacity:0.6; margin-top:8px;">Управление розыгрышами AniCosmo</p>
-                </div>
-
-                <div id="toast" class="toast"></div>
-
-                <!-- Форма добавления -->
-                <div class="card">
-                    <h3>➕ Добавить выигрыш</h3>
-                    <div class="form-group">
-                        <input type="text" id="winCode" placeholder="Код (132547)">
-                        <input type="text" id="winUser" placeholder="Имя участника">
-                        <input type="text" id="winPrize" placeholder="Что выиграл">
-                        <input type="number" id="winValue" placeholder="Ценность в ПТ">
-                    </div>
-                    <div class="form-group">
-                        <input type="text" id="winTags" placeholder="Теги (через запятую)">
-                        <button class="btn-submit" onclick="addWin()">Опубликовать</button>
-                    </div>
-                    <div class="code-hint">🔑 Код для публикации: 132547 (введите в поле выше)</div>
                 </div>
 
                 <!-- Недавние выигрыши -->
@@ -441,23 +426,50 @@ def home():
             <div class="footer">ANICOSMO</div>
         </div>
 
-        <!-- Модальное окно для удаления -->
+        <!-- ПЛАВАЮЩАЯ КНОПКА ДОБАВИТЬ -->
+        <button class="fab" onclick="openAddModal()">+</button>
+
+        <!-- МОДАЛЬНОЕ ОКНО ДЛЯ ДОБАВЛЕНИЯ -->
+        <div class="modal" id="addModal">
+            <div class="modal-content">
+                <h3>➕ Добавить выигрыш</h3>
+
+                <div class="form-group">
+                    <input type="password" id="modalCode" placeholder="Введите код" oninput="checkCode()">
+                    <div class="code-status" id="codeStatus"></div>
+                </div>
+
+                <div class="form-group">
+                    <input type="text" id="modalUser" placeholder="Имя участника" disabled>
+                    <input type="text" id="modalPrize" placeholder="Что выиграл" disabled>
+                    <input type="number" id="modalValue" placeholder="Ценность в ПТ" disabled>
+                    <input type="text" id="modalTags" placeholder="Теги (через запятую)" disabled>
+                </div>
+
+                <div class="modal-buttons">
+                    <button class="btn-cancel" onclick="closeAddModal()">Отмена</button>
+                    <button class="btn-submit-modal" id="modalSubmitBtn" onclick="submitWin()" disabled>Опубликовать</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- МОДАЛЬНОЕ ОКНО ДЛЯ УДАЛЕНИЯ -->
         <div class="modal" id="deleteModal">
             <div class="modal-content">
                 <h3>🗑️ Удалить выигрыш?</h3>
-                <p style="opacity:0.6; margin-bottom:15px;">Введите код для подтверждения</p>
-                <input type="text" id="deleteCodeInput" placeholder="Код (132547)">
+                <p style="opacity:0.6; margin-bottom:15px; text-align:center;">Введите код для подтверждения</p>
+                <input type="password" id="deleteCodeInput" placeholder="Введите код" style="width:100%; padding:12px; border-radius:10px; border:1px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.06); color:white; font-size:16px; margin-bottom:15px; text-align:center;">
                 <div class="modal-buttons">
                     <button class="btn-cancel" onclick="closeDeleteModal()">Отмена</button>
-                    <button class="btn-confirm" onclick="confirmDelete()">Удалить</button>
+                    <button class="btn-submit-modal" onclick="confirmDelete()" style="background:#ff6b6b; color:white; padding:10px 30px; border:none; border-radius:10px; font-size:15px; cursor:pointer;">Удалить</button>
                 </div>
             </div>
         </div>
 
         <script>
             let deleteTargetId = null;
+            let codeVerified = false;
 
-            // Переходы между экранами
             function goForward() {
                 const main = document.getElementById('screen-main');
                 main.style.opacity = '0';
@@ -486,10 +498,11 @@ def home():
             }
 
             function showToast(message, type = 'info') {
-                const toast = document.getElementById('toast');
-                toast.textContent = message;
+                const toast = document.createElement('div');
                 toast.className = 'toast ' + type;
-                setTimeout(() => { toast.className = 'toast'; }, 5000);
+                toast.textContent = message;
+                document.body.appendChild(toast);
+                setTimeout(() => { toast.remove(); }, 4000);
             }
 
             async function loadData() {
@@ -563,19 +576,74 @@ def home():
                 container.innerHTML = html;
             }
 
-            // Добавить выигрыш
-            async function addWin() {
-                const code = document.getElementById('winCode').value.trim();
-                const user = document.getElementById('winUser').value.trim();
-                const prize = document.getElementById('winPrize').value.trim();
-                const value = parseInt(document.getElementById('winValue').value);
-                const tagsRaw = document.getElementById('winTags').value.trim();
+            // === МОДАЛКА ДОБАВЛЕНИЯ ===
+            function openAddModal() {
+                document.getElementById('addModal').classList.add('active');
+                document.getElementById('modalCode').value = '';
+                document.getElementById('modalUser').value = '';
+                document.getElementById('modalPrize').value = '';
+                document.getElementById('modalValue').value = '';
+                document.getElementById('modalTags').value = '';
+                document.getElementById('modalUser').disabled = true;
+                document.getElementById('modalPrize').disabled = true;
+                document.getElementById('modalValue').disabled = true;
+                document.getElementById('modalTags').disabled = true;
+                document.getElementById('modalSubmitBtn').disabled = true;
+                document.getElementById('codeStatus').textContent = '';
+                document.getElementById('codeStatus').className = 'code-status';
+                document.getElementById('modalCode').focus();
+            }
 
-                // ПРОВЕРКА КОДА
-                if (code !== '132547') {
-                    showToast('❌ Неверный код! Нужно ввести 132547', 'error');
+            function closeAddModal() {
+                document.getElementById('addModal').classList.remove('active');
+                codeVerified = false;
+            }
+
+            function checkCode() {
+                const code = document.getElementById('modalCode').value.trim();
+                const status = document.getElementById('codeStatus');
+
+                if (code === '132547') {
+                    status.textContent = '✅ Код верный!';
+                    status.className = 'code-status success';
+                    document.getElementById('modalUser').disabled = false;
+                    document.getElementById('modalPrize').disabled = false;
+                    document.getElementById('modalValue').disabled = false;
+                    document.getElementById('modalTags').disabled = false;
+                    document.getElementById('modalSubmitBtn').disabled = false;
+                    codeVerified = true;
+                } else if (code.length > 0) {
+                    status.textContent = '❌ Неверный код';
+                    status.className = 'code-status error';
+                    document.getElementById('modalUser').disabled = true;
+                    document.getElementById('modalPrize').disabled = true;
+                    document.getElementById('modalValue').disabled = true;
+                    document.getElementById('modalTags').disabled = true;
+                    document.getElementById('modalSubmitBtn').disabled = true;
+                    codeVerified = false;
+                } else {
+                    status.textContent = '';
+                    status.className = 'code-status';
+                    document.getElementById('modalUser').disabled = true;
+                    document.getElementById('modalPrize').disabled = true;
+                    document.getElementById('modalValue').disabled = true;
+                    document.getElementById('modalTags').disabled = true;
+                    document.getElementById('modalSubmitBtn').disabled = true;
+                    codeVerified = false;
+                }
+            }
+
+            async function submitWin() {
+                if (!codeVerified) {
+                    showToast('❌ Сначала введите правильный код!', 'error');
                     return;
                 }
+
+                const user = document.getElementById('modalUser').value.trim();
+                const prize = document.getElementById('modalPrize').value.trim();
+                const value = parseInt(document.getElementById('modalValue').value);
+                const tagsRaw = document.getElementById('modalTags').value.trim();
+
                 if (!user || !prize || !value) {
                     showToast('❌ Заполните все поля (имя, приз, ценность в ПТ)!', 'error');
                     return;
@@ -596,11 +664,7 @@ def home():
                     const result = await res.json();
                     if (result.success) {
                         showToast('✅ Выигрыш добавлен!', 'success');
-                        document.getElementById('winCode').value = '';
-                        document.getElementById('winUser').value = '';
-                        document.getElementById('winPrize').value = '';
-                        document.getElementById('winValue').value = '';
-                        document.getElementById('winTags').value = '';
+                        closeAddModal();
                         loadData();
                     } else {
                         showToast('❌ ' + result.error, 'error');
@@ -610,7 +674,7 @@ def home():
                 }
             }
 
-            // Открыть модалку удаления
+            // === МОДАЛКА УДАЛЕНИЯ ===
             function openDeleteModal(id) {
                 deleteTargetId = id;
                 document.getElementById('deleteModal').classList.add('active');
@@ -623,12 +687,10 @@ def home():
                 deleteTargetId = null;
             }
 
-            // Подтвердить удаление
             async function confirmDelete() {
                 const code = document.getElementById('deleteCodeInput').value.trim();
-                // ПРОВЕРКА КОДА
                 if (code !== '132547') {
-                    showToast('❌ Неверный код! Нужно ввести 132547', 'error');
+                    showToast('❌ Неверный код!', 'error');
                     return;
                 }
                 if (deleteTargetId === null) return;
@@ -652,9 +714,21 @@ def home():
                 }
             }
 
-            // Закрыть модалку по Escape
             document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape') closeDeleteModal();
+                if (e.key === 'Escape') {
+                    closeAddModal();
+                    closeDeleteModal();
+                }
+                if (e.key === 'Enter') {
+                    if (document.getElementById('addModal').classList.contains('active')) {
+                        if (!document.getElementById('modalSubmitBtn').disabled) {
+                            submitWin();
+                        }
+                    }
+                    if (document.getElementById('deleteModal').classList.contains('active')) {
+                        confirmDelete();
+                    }
+                }
             });
         </script>
     </body>
