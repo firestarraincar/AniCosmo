@@ -33,7 +33,6 @@ def home():
                 position: relative;
             }
 
-            /* Тёмная подложка поверх фона */
             .overlay {
                 position: absolute;
                 top: 0;
@@ -108,7 +107,7 @@ def home():
                 box-shadow: 0 0 40px rgba(255, 255, 255, 0.05);
             }
 
-            /* === ЭКРАН 2: Контент (изначально скрыт) === */
+            /* === ЭКРАН 2: Контент === */
             #screen-content {
                 position: absolute;
                 top: 0;
@@ -150,6 +149,29 @@ def home():
                 text-shadow: 0 0 20px rgba(0,0,0,0.5);
             }
 
+            /* Кнопка НАЗАД */
+            .btn-back {
+                margin-top: 40px;
+                padding: 12px 40px;
+                font-size: 16px;
+                font-weight: 400;
+                letter-spacing: 2px;
+                color: rgba(255,255,255,0.6);
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid rgba(255, 255, 255, 0.15);
+                border-radius: 50px;
+                cursor: pointer;
+                transition: all 0.4s;
+                text-transform: uppercase;
+                backdrop-filter: blur(4px);
+            }
+
+            .btn-back:hover {
+                background: rgba(255, 255, 255, 0.1);
+                border-color: rgba(255, 255, 255, 0.3);
+                color: white;
+            }
+
             .footer {
                 position: fixed;
                 bottom: 30px;
@@ -174,10 +196,10 @@ def home():
                 <div class="label">Канал</div>
                 <a href="https://t.me/AniCosmoDay" target="_blank">@AniCosmoDay</a>
             </div>
-            <button class="btn-start" onclick="start()">Начать</button>
+            <button class="btn-start" onclick="goForward()">Начать</button>
         </div>
 
-        <!-- ЭКРАН 2: Контент (пока скрыт) -->
+        <!-- ЭКРАН 2: Контент -->
         <div id="screen-content">
             <div class="content-box">
                 <h2>✨ Добро пожаловать!</h2>
@@ -185,13 +207,14 @@ def home():
                 <p style="margin-top:20px; font-size:16px; opacity:0.5;">
                     (Вы сможете заменить это на что угодно позже)
                 </p>
+                <button class="btn-back" onclick="goBack()">← Назад</button>
             </div>
         </div>
 
         <div class="footer">ANICOSMO</div>
 
         <script>
-            function start() {
+            function goForward() {
                 const main = document.getElementById('screen-main');
                 main.style.opacity = '0';
                 main.style.transform = 'scale(0.95)';
@@ -200,6 +223,21 @@ def home():
                     main.style.display = 'none';
                     document.getElementById('screen-content').classList.add('active');
                 }, 800);
+            }
+
+            function goBack() {
+                const main = document.getElementById('screen-main');
+                const content = document.getElementById('screen-content');
+
+                content.classList.remove('active');
+
+                setTimeout(() => {
+                    main.style.display = 'block';
+                    setTimeout(() => {
+                        main.style.opacity = '1';
+                        main.style.transform = 'scale(1)';
+                    }, 50);
+                }, 400);
             }
         </script>
 
