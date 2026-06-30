@@ -652,7 +652,7 @@ def background():
 def main_page():
     username = session.get('username', 'Гость')
     role = session.get('role', 'user')
-    return f'''
+    return '''
     <!DOCTYPE html>
     <html>
     <head>
