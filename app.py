@@ -251,7 +251,7 @@ def home():
                 color: #1a1a2e;
             }
 
-            /* ПЛАВАЮЩАЯ КНОПКА ДОБАВИТЬ */
+            /* ПЛАВАЮЩАЯ КНОПКА ДОБАВИТЬ (скрыта по умолчанию) */
             .fab {
                 position: fixed;
                 bottom: 30px;
@@ -267,13 +267,16 @@ def home():
                 box-shadow: 0 4px 20px rgba(238, 90, 36, 0.4);
                 transition: all 0.3s;
                 z-index: 50;
-                display: flex;
+                display: none;
                 align-items: center;
                 justify-content: center;
             }
             .fab:hover {
                 transform: scale(1.1);
                 box-shadow: 0 6px 30px rgba(238, 90, 36, 0.6);
+            }
+            .fab.show {
+                display: flex;
             }
 
             /* МОДАЛЬНОЕ ОКНО ДЛЯ ДОБАВЛЕНИЯ */
@@ -365,7 +368,6 @@ def home():
             .modal-content .code-status {
                 text-align: center;
                 font-size: 14px;
-                margin-top: 5px;
                 min-height: 24px;
             }
             .modal-content .code-status.success {
@@ -426,8 +428,8 @@ def home():
             <div class="footer">ANICOSMO</div>
         </div>
 
-        <!-- ПЛАВАЮЩАЯ КНОПКА ДОБАВИТЬ -->
-        <button class="fab" onclick="openAddModal()">+</button>
+        <!-- ПЛАВАЮЩАЯ КНОПКА ДОБАВИТЬ (появляется только на втором экране) -->
+        <button class="fab" id="fab" onclick="openAddModal()">+</button>
 
         <!-- МОДАЛЬНОЕ ОКНО ДЛЯ ДОБАВЛЕНИЯ -->
         <div class="modal" id="addModal">
@@ -478,7 +480,11 @@ def home():
                     main.style.display = 'none';
                     const content = document.getElementById('screen-content');
                     content.style.display = 'block';
-                    setTimeout(() => content.classList.add('active'), 50);
+                    setTimeout(() => {
+                        content.classList.add('active');
+                        // ПОКАЗЫВАЕМ КНОПКУ "+" ТОЛЬКО НА ВТОРОМ ЭКРАНЕ
+                        document.getElementById('fab').classList.add('show');
+                    }, 50);
                     loadData();
                 }, 500);
             }
@@ -486,6 +492,8 @@ def home():
             function goBack() {
                 const content = document.getElementById('screen-content');
                 content.classList.remove('active');
+                // СКРЫВАЕМ КНОПКУ "+"
+                document.getElementById('fab').classList.remove('show');
                 setTimeout(() => {
                     content.style.display = 'none';
                     const main = document.getElementById('screen-main');
