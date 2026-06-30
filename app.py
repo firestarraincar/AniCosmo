@@ -652,15 +652,15 @@ def background():
 def main_page():
     username = session.get('username', 'Гость')
     role = session.get('role', 'user')
-    return f'''
+    return '''
     <!DOCTYPE html>
     <html>
     <head>
         <meta charset="UTF-8">
         <title>AniCosmo — Розыгрыши</title>
         <style>
-            * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-            body {{
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body {
                 font-family: 'Segoe UI', Arial, sans-serif;
                 min-height: 100vh;
                 background-image: url('/background');
@@ -669,22 +669,22 @@ def main_page():
                 background-attachment: fixed;
                 color: white;
                 position: relative;
-            }}
-            .overlay {{
+            }
+            .overlay {
                 position: fixed;
                 top: 0; left: 0; width: 100%; height: 100%;
                 background: rgba(0, 0, 0, 0.7);
                 z-index: 0;
-            }}
-            .container {{
+            }
+            .container {
                 position: relative;
                 z-index: 1;
                 max-width: 1100px;
                 margin: 0 auto;
                 padding: 40px 20px 100px 20px;
-            }}
+            }
 
-            .user-bar {{
+            .user-bar {
                 position: fixed;
                 top: 15px;
                 right: 15px;
@@ -697,52 +697,52 @@ def main_page():
                 padding: 8px 16px;
                 border-radius: 30px;
                 border: 1px solid rgba(255,255,255,0.05);
-            }}
-            .user-bar .username {{ font-size: 14px; opacity: 0.8; }}
-            .user-bar .role-badge {{
+            }
+            .user-bar .username { font-size: 14px; opacity: 0.8; }
+            .user-bar .role-badge {
                 font-size: 11px;
                 padding: 2px 12px;
                 border-radius: 20px;
                 background: rgba(255,215,0,0.15);
                 color: #ffd93d;
-            }}
-            .user-bar .role-badge.admin {{ background: rgba(255,107,107,0.2); color: #ff6b6b; }}
-            .user-bar .logout-link {{
+            }
+            .user-bar .role-badge.admin { background: rgba(255,107,107,0.2); color: #ff6b6b; }
+            .user-bar .logout-link {
                 color: rgba(255,255,255,0.3);
                 text-decoration: none;
                 font-size: 13px;
                 transition: color 0.3s;
-            }}
-            .user-bar .logout-link:hover {{ color: #ff6b6b; }}
+            }
+            .user-bar .logout-link:hover { color: #ff6b6b; }
 
-            #screen-main {{
+            #screen-main {
                 text-align: center;
                 padding: 80px 20px;
                 transition: opacity 0.8s, transform 0.8s;
-            }}
-            #screen-main h1 {{
+            }
+            #screen-main h1 {
                 font-size: 52px;
                 font-weight: 700;
                 text-shadow: 0 0 60px rgba(0,0,0,0.8);
                 margin-bottom: 25px;
-            }}
-            #screen-main .channel-block {{ margin-bottom: 45px; }}
-            #screen-main .channel-block .label {{
+            }
+            #screen-main .channel-block { margin-bottom: 45px; }
+            #screen-main .channel-block .label {
                 font-size: 18px;
                 opacity: 0.6;
                 letter-spacing: 4px;
                 text-transform: uppercase;
                 margin-bottom: 8px;
-            }}
-            #screen-main .channel-block a {{
+            }
+            #screen-main .channel-block a {
                 font-size: 28px;
                 color: #ff6b6b;
                 text-decoration: none;
                 font-weight: 600;
                 transition: color 0.3s;
-            }}
-            #screen-main .channel-block a:hover {{ color: #ff8a8a; }}
-            .btn {{
+            }
+            #screen-main .channel-block a:hover { color: #ff8a8a; }
+            .btn {
                 padding: 16px 60px;
                 font-size: 20px;
                 font-weight: 500;
@@ -755,61 +755,61 @@ def main_page():
                 transition: all 0.4s;
                 text-transform: uppercase;
                 backdrop-filter: blur(4px);
-            }}
-            .btn:hover {{
+            }
+            .btn:hover {
                 background: rgba(255,255,255,0.15);
                 border-color: rgba(255,255,255,0.5);
                 transform: scale(1.03);
-            }}
+            }
 
-            #screen-content {{
+            #screen-content {
                 display: none;
                 opacity: 0;
                 transition: opacity 0.8s;
-            }}
-            #screen-content.active {{
+            }
+            #screen-content.active {
                 display: block;
                 opacity: 1;
-            }}
+            }
 
-            .card {{
+            .card {
                 background: rgba(255,255,255,0.06);
                 backdrop-filter: blur(10px);
                 border-radius: 16px;
                 padding: 25px;
                 margin-bottom: 25px;
                 border: 1px solid rgba(255,255,255,0.08);
-            }}
-            .card h3 {{
+            }
+            .card h3 {
                 font-size: 20px;
                 font-weight: 500;
                 margin-bottom: 15px;
                 letter-spacing: 1px;
                 color: #ff6b6b;
-            }}
+            }
 
-            .leaderboard-table {{
+            .leaderboard-table {
                 width: 100%;
                 border-collapse: collapse;
-            }}
+            }
             .leaderboard-table th,
-            .leaderboard-table td {{
+            .leaderboard-table td {
                 padding: 12px 15px;
                 text-align: left;
                 border-bottom: 1px solid rgba(255,255,255,0.06);
-            }}
-            .leaderboard-table th {{
+            }
+            .leaderboard-table th {
                 color: rgba(255,255,255,0.5);
                 font-weight: 400;
                 font-size: 14px;
                 letter-spacing: 1px;
                 text-transform: uppercase;
-            }}
-            .leaderboard-table tr:hover td {{ background: rgba(255,255,255,0.03); }}
-            .leaderboard-table .rank {{ color: #ffd93d; font-weight: 600; }}
-            .leaderboard-table .total {{ color: #6bcb77; font-weight: 600; }}
+            }
+            .leaderboard-table tr:hover td { background: rgba(255,255,255,0.03); }
+            .leaderboard-table .rank { color: #ffd93d; font-weight: 600; }
+            .leaderboard-table .total { color: #6bcb77; font-weight: 600; }
 
-            .win-item {{
+            .win-item {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
@@ -817,30 +817,30 @@ def main_page():
                 border-bottom: 1px solid rgba(255,255,255,0.05);
                 flex-wrap: wrap;
                 gap: 8px;
-            }}
-            .win-item:last-child {{ border-bottom: none; }}
-            .win-item .win-id {{ font-size: 11px; color: rgba(255,255,255,0.2); margin-right: 8px; }}
-            .win-item .win-user {{ font-weight: 500; }}
-            .win-item .win-prize {{ color: #ffd93d; }}
-            .win-item .win-value {{ color: #6bcb77; font-weight: 600; }}
-            .win-item .win-date {{ font-size: 12px; color: rgba(255,255,255,0.3); }}
-            .win-item .btn-delete {{
+            }
+            .win-item:last-child { border-bottom: none; }
+            .win-item .win-id { font-size: 11px; color: rgba(255,255,255,0.2); margin-right: 8px; }
+            .win-item .win-user { font-weight: 500; }
+            .win-item .win-prize { color: #ffd93d; }
+            .win-item .win-value { color: #6bcb77; font-weight: 600; }
+            .win-item .win-date { font-size: 12px; color: rgba(255,255,255,0.3); }
+            .win-item .btn-delete {
                 padding: 4px 14px; font-size: 12px;
                 color: rgba(255,107,107,0.6);
                 background: rgba(255,107,107,0.1);
                 border: 1px solid rgba(255,107,107,0.2);
                 border-radius: 20px;
                 cursor: pointer;
-            }}
-            .win-item .btn-delete:hover {{ background: rgba(255,107,107,0.2); color: #ff6b6b; }}
-            .win-item .btn-like {{
+            }
+            .win-item .btn-delete:hover { background: rgba(255,107,107,0.2); color: #ff6b6b; }
+            .win-item .btn-like {
                 padding: 4px 12px; font-size: 13px;
                 background: transparent; border: none; color: rgba(255,255,255,0.4);
                 cursor: pointer;
-            }}
-            .win-item .btn-like:hover {{ color: #ff6b6b; }}
+            }
+            .win-item .btn-like:hover { color: #ff6b6b; }
 
-            .btn-back {{
+            .btn-back {
                 margin-top: 20px;
                 padding: 12px 40px;
                 font-size: 16px;
@@ -851,21 +851,21 @@ def main_page():
                 cursor: pointer;
                 transition: all 0.4s;
                 text-transform: uppercase;
-            }}
-            .btn-back:hover {{ background: rgba(255,255,255,0.1); color: white; }}
+            }
+            .btn-back:hover { background: rgba(255,255,255,0.1); color: white; }
 
-            .footer {{ text-align: center; color: rgba(255,255,255,0.12); font-size: 13px; letter-spacing: 3px; padding: 30px 0 10px; }}
+            .footer { text-align: center; color: rgba(255,255,255,0.12); font-size: 13px; letter-spacing: 3px; padding: 30px 0 10px; }
 
-            .toast {{
+            .toast {
                 padding: 10px 20px; border-radius: 10px; display: none;
                 position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
                 z-index: 200; max-width: 90%; text-align: center;
-            }}
-            .toast.success {{ display: block; background: rgba(107,203,119,0.95); color: white; }}
-            .toast.error {{ display: block; background: rgba(255,107,107,0.95); color: white; }}
-            .toast.info {{ display: block; background: rgba(255,217,61,0.95); color: #1a1a2e; }}
+            }
+            .toast.success { display: block; background: rgba(107,203,119,0.95); color: white; }
+            .toast.error { display: block; background: rgba(255,107,107,0.95); color: white; }
+            .toast.info { display: block; background: rgba(255,217,61,0.95); color: #1a1a2e; }
 
-            .fab {{
+            .fab {
                 position: fixed; bottom: 30px; right: 30px;
                 width: 64px; height: 64px; border-radius: 50%;
                 background: linear-gradient(135deg, #ff6b6b, #ee5a24);
@@ -873,82 +873,82 @@ def main_page():
                 box-shadow: 0 4px 20px rgba(238,90,36,0.4);
                 transition: all 0.3s; z-index: 50;
                 display: none; align-items: center; justify-content: center;
-            }}
-            .fab:hover {{ transform: scale(1.1); box-shadow: 0 6px 30px rgba(238,90,36,0.6); }}
-            .fab.show {{ display: flex; }}
+            }
+            .fab:hover { transform: scale(1.1); box-shadow: 0 6px 30px rgba(238,90,36,0.6); }
+            .fab.show { display: flex; }
 
-            .modal {{
+            .modal {
                 display: none; position: fixed; top: 0; left: 0;
                 width: 100%; height: 100%; background: rgba(0,0,0,0.7);
                 z-index: 100; justify-content: center; align-items: center;
-            }}
-            .modal.active {{ display: flex; }}
-            .modal-content {{
+            }
+            .modal.active { display: flex; }
+            .modal-content {
                 background: rgba(30,30,50,0.95); backdrop-filter: blur(10px);
                 padding: 30px; border-radius: 16px; max-width: 500px; width: 90%;
                 border: 1px solid rgba(255,255,255,0.1);
                 max-height: 90vh; overflow-y: auto;
-            }}
-            .modal-content h3 {{ margin-bottom: 15px; color: #ff6b6b; text-align: center; font-size: 24px; }}
-            .modal-content .form-group {{ display: flex; flex-direction: column; gap: 12px; margin-bottom: 15px; }}
-            .modal-content .form-group input, .modal-content .form-group select, .modal-content .form-group textarea {{
+            }
+            .modal-content h3 { margin-bottom: 15px; color: #ff6b6b; text-align: center; font-size: 24px; }
+            .modal-content .form-group { display: flex; flex-direction: column; gap: 12px; margin-bottom: 15px; }
+            .modal-content .form-group input, .modal-content .form-group select, .modal-content .form-group textarea {
                 padding: 12px 16px; border-radius: 10px;
                 border: 1px solid rgba(255,255,255,0.15);
                 background: rgba(255,255,255,0.06); color: white; font-size: 15px; width: 100%;
-            }}
-            .modal-content .form-group input:focus, .modal-content .form-group select:focus, .modal-content .form-group textarea:focus {{
+            }
+            .modal-content .form-group input:focus, .modal-content .form-group select:focus, .modal-content .form-group textarea:focus {
                 outline: none; border-color: #ff6b6b;
-            }}
-            .modal-content .form-group input::placeholder, .modal-content .form-group textarea::placeholder {{
+            }
+            .modal-content .form-group input::placeholder, .modal-content .form-group textarea::placeholder {
                 color: rgba(255,255,255,0.4);
-            }}
-            .modal-content .form-group input:disabled {{ opacity: 0.4; cursor: not-allowed; }}
-            .modal-content .form-group textarea {{ resize: vertical; min-height: 60px; font-family: inherit; }}
-            .modal-buttons {{
+            }
+            .modal-content .form-group input:disabled { opacity: 0.4; cursor: not-allowed; }
+            .modal-content .form-group textarea { resize: vertical; min-height: 60px; font-family: inherit; }
+            .modal-buttons {
                 display: flex; gap: 12px; justify-content: center; margin-top: 10px;
-            }}
-            .modal-buttons button {{
+            }
+            .modal-buttons button {
                 padding: 10px 30px; border-radius: 10px; border: none; font-size: 15px; cursor: pointer;
-            }}
-            .modal-buttons .btn-submit-modal {{ background: #ff6b6b; color: white; }}
-            .modal-buttons .btn-submit-modal:hover:not(:disabled) {{ background: #ee5a24; }}
-            .modal-buttons .btn-submit-modal:disabled {{ opacity: 0.3; cursor: not-allowed; }}
-            .modal-buttons .btn-cancel {{ background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.6); }}
-            .modal-buttons .btn-cancel:hover {{ background: rgba(255,255,255,0.15); }}
-            .modal-content .code-status {{ text-align: center; font-size: 14px; min-height: 24px; }}
-            .modal-content .code-status.success {{ color: #6bcb77; }}
-            .modal-content .code-status.error {{ color: #ff6b6b; }}
+            }
+            .modal-buttons .btn-submit-modal { background: #ff6b6b; color: white; }
+            .modal-buttons .btn-submit-modal:hover:not(:disabled) { background: #ee5a24; }
+            .modal-buttons .btn-submit-modal:disabled { opacity: 0.3; cursor: not-allowed; }
+            .modal-buttons .btn-cancel { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.6); }
+            .modal-buttons .btn-cancel:hover { background: rgba(255,255,255,0.15); }
+            .modal-content .code-status { text-align: center; font-size: 14px; min-height: 24px; }
+            .modal-content .code-status.success { color: #6bcb77; }
+            .modal-content .code-status.error { color: #ff6b6b; }
 
-            .level-badge {{
+            .level-badge {
                 display: inline-block; padding: 2px 12px; border-radius: 20px;
                 font-size: 12px; font-weight: 600;
-            }}
+            }
 
-            .raffle-item {{
+            .raffle-item {
                 padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
-            }}
-            .raffle-item:last-child {{ border-bottom: none; }}
-            .raffle-item .raffle-title {{ font-weight: 600; font-size: 18px; }}
-            .raffle-item .raffle-status {{
+            }
+            .raffle-item:last-child { border-bottom: none; }
+            .raffle-item .raffle-title { font-weight: 600; font-size: 18px; }
+            .raffle-item .raffle-status {
                 display: inline-block; padding: 2px 12px; border-radius: 20px; font-size: 12px;
-            }}
-            .raffle-item .raffle-status.active {{ background: rgba(107,203,119,0.3); color: #6bcb77; }}
-            .raffle-item .raffle-status.ended {{ background: rgba(255,107,107,0.3); color: #ff6b6b; }}
-            .raffle-item .raffle-status.planned {{ background: rgba(255,217,61,0.3); color: #ffd93d; }}
+            }
+            .raffle-item .raffle-status.active { background: rgba(107,203,119,0.3); color: #6bcb77; }
+            .raffle-item .raffle-status.ended { background: rgba(255,107,107,0.3); color: #ff6b6b; }
+            .raffle-item .raffle-status.planned { background: rgba(255,217,61,0.3); color: #ffd93d; }
 
-            .comment-item {{
+            .comment-item {
                 padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
                 display: flex; gap: 12px;
-            }}
-            .comment-item .comment-user {{ font-weight: 600; color: #ff6b6b; }}
-            .comment-item .comment-text {{ opacity: 0.8; }}
+            }
+            .comment-item .comment-user { font-weight: 600; color: #ff6b6b; }
+            .comment-item .comment-text { opacity: 0.8; }
 
-            @media (max-width: 600px) {{
-                #screen-main h1 {{ font-size: 32px; }}
-                .fab {{ width: 56px; height: 56px; font-size: 28px; bottom: 20px; right: 20px; }}
-                .user-bar {{ top: 10px; right: 10px; padding: 6px 12px; }}
-                .user-bar .username {{ font-size: 12px; }}
-            }}
+            @media (max-width: 600px) {
+                #screen-main h1 { font-size: 32px; }
+                .fab { width: 56px; height: 56px; font-size: 28px; bottom: 20px; right: 20px; }
+                .user-bar { top: 10px; right: 10px; padding: 6px 12px; }
+                .user-bar .username { font-size: 12px; }
+            }
         </style>
     </head>
     <body>
@@ -957,7 +957,7 @@ def main_page():
         <!-- ВЕРХНЯЯ ПАНЕЛЬ ПОЛЬЗОВАТЕЛЯ -->
         <div class="user-bar">
             <span class="username">👤 {username}</span>
-            <span class="role-badge {'admin' if role == 'admin' else ''}">{role}</span>
+            <span class="role-badge {role_class}">{role}</span>
             <a href="/logout" class="logout-link">🚪</a>
         </div>
 
@@ -1880,7 +1880,11 @@ def main_page():
         </script>
     </body>
     </html>
-    '''
+    '''.format(
+        username=username,
+        role=role,
+        role_class='admin' if role == 'admin' else ''
+    )
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
