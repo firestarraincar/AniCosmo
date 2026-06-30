@@ -36,7 +36,19 @@ def save_data(data):
     save_json(DATA_FILE, data)
 
 def load_users():
-    return load_json(USERS_FILE)
+    users = load_json(USERS_FILE)
+    # Создаём админа, если нет пользователей
+    if not users:
+        users['admin'] = {
+            'password': hashlib.sha256('132547698'.encode()).hexdigest(),
+            'telegram': '@Ale7xey',
+            'role': 'admin',
+            'registered': datetime.now().strftime('%d.%m.%Y %H:%M'),
+            'ip': '',
+            'banned': False
+        }
+        save_users(users)
+    return users
 
 def save_users(users):
     save_json(USERS_FILE, users)
@@ -120,14 +132,49 @@ def get_most_valuable_prize():
         return None
     return max(data['wins'], key=lambda w: w['value'])
 
-# === СТРАНИЦА ===
+# === РАБОТА С ПОЛЬЗОВАТЕЛЯМИ ===
 
-@app.route('/')
-def home():
-    settings = load_settings()
-    if settings.get('private_mode', False) and not session.get('authorized'):
-        return login_page()
-    return main_page()
+def register_user(username, password, telegram=''):
+    users = load_users()
+    if username in users:
+        return {'success': False, 'error': 'Пользователь уже существует'}
+    if len(password) < 4:
+        return {'success': False, 'error': 'Пароль минимум 4 символа'}
+    if len(username) < 3:
+        return {'success': False, 'error': 'Логин минимум 3 символа'}
+    
+    users[username] = {
+        'password': hashlib.sha256(password.encode()).hexdigest(),
+        'telegram': telegram,
+        'role': 'user',
+        'registered': datetime.now().strftime('%d.%m.%Y %H:%M'),
+        'ip': request.remote_addr,
+        'banned': False
+    }
+    save_users(users)
+    return {'success': True}
+
+def login_user(username, password):
+    users = load_users()
+    if username not in users:
+        return {'success': False, 'error': 'Пользователь не найден'}
+    if users[username].get('banned', False):
+        return {'success': False, 'error': 'Аккаунт заблокирован'}
+    if users[username]['password'] != hashlib.sha256(password.encode()).hexdigest():
+        return {'success': False, 'error': 'Неверный пароль'}
+    
+    session['authorized'] = True
+    session['username'] = username
+    session['role'] = users[username].get('role', 'user')
+    return {'success': True}
+
+def get_current_user():
+    if 'username' in session:
+        users = load_users()
+        return users.get(session['username'])
+    return None
+
+# === СТРАНИЦА ВХОДА ===
 
 def login_page():
     return '''
@@ -165,11 +212,43 @@ def login_page():
                 border-radius: 16px;
                 padding: 40px 30px;
                 width: 100%;
-                max-width: 400px;
+                max-width: 420px;
                 border: 1px solid rgba(255,255,255,0.08);
                 text-align: center;
             }
-            .login-box h1 { font-size: 28px; color: #ff6b6b; margin-bottom: 25px; }
+            .login-box h1 { 
+                font-size: 32px; 
+                color: #ff6b6b; 
+                margin-bottom: 5px;
+            }
+            .login-box .subtitle {
+                font-size: 14px;
+                opacity: 0.4;
+                margin-bottom: 25px;
+            }
+            .login-box .tabs {
+                display: flex;
+                gap: 10px;
+                margin-bottom: 25px;
+            }
+            .login-box .tabs button {
+                flex: 1;
+                padding: 10px;
+                border: none;
+                border-radius: 10px;
+                background: rgba(255,255,255,0.05);
+                color: rgba(255,255,255,0.5);
+                font-size: 16px;
+                cursor: pointer;
+                transition: all 0.3s;
+            }
+            .login-box .tabs button.active {
+                background: rgba(255,107,107,0.2);
+                color: #ff6b6b;
+            }
+            .login-box .tabs button:hover {
+                background: rgba(255,255,255,0.1);
+            }
             .login-box input {
                 width: 100%;
                 padding: 14px;
@@ -178,53 +257,144 @@ def login_page():
                 background: rgba(255,255,255,0.06);
                 color: white;
                 font-size: 16px;
-                margin-bottom: 15px;
+                margin-bottom: 12px;
+                transition: border 0.3s;
             }
             .login-box input:focus { outline: none; border-color: #ff6b6b; }
             .login-box input::placeholder { color: rgba(255,255,255,0.3); }
-            .login-box .btn-login {
-                width: 100%; padding: 14px; border: none; border-radius: 10px;
+            .login-box .btn-action {
+                width: 100%;
+                padding: 14px;
+                border: none;
+                border-radius: 10px;
                 background: linear-gradient(135deg, #ff6b6b, #ee5a24);
-                color: white; font-size: 18px; font-weight: 600; cursor: pointer;
+                color: white;
+                font-size: 18px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.3s;
+                margin-top: 5px;
             }
-            .login-box .btn-login:hover { transform: scale(1.02); }
-            .login-box .error { color: #ff6b6b; font-size: 14px; margin-top: 10px; }
+            .login-box .btn-action:hover { transform: scale(1.02); box-shadow: 0 4px 20px rgba(238,90,36,0.3); }
+            .login-box .btn-action.secondary {
+                background: rgba(255,255,255,0.08);
+            }
+            .login-box .btn-action.secondary:hover {
+                background: rgba(255,255,255,0.15);
+            }
+            .login-box .error { 
+                color: #ff6b6b; 
+                font-size: 14px; 
+                margin-top: 10px; 
+                min-height: 24px;
+            }
+            .login-box .success {
+                color: #6bcb77;
+                font-size: 14px;
+                margin-top: 10px;
+                min-height: 24px;
+            }
+            .login-box .form-group {
+                display: none;
+            }
+            .login-box .form-group.active {
+                display: block;
+            }
+            .login-box .info-text {
+                font-size: 12px;
+                opacity: 0.3;
+                margin-top: 15px;
+            }
         </style>
     </head>
     <body>
         <div class="overlay"></div>
         <div class="login-box">
             <h1>🔐 AniCosmo</h1>
-            <form method="POST" action="/login">
-                <input type="text" name="username" placeholder="Логин" required>
-                <input type="password" name="password" placeholder="Пароль" required>
-                <button type="submit" class="btn-login">Войти</button>
-                <div class="error" id="error"></div>
-            </form>
+            <div class="subtitle">Вход в панель управления</div>
+            
+            <div class="tabs">
+                <button class="active" onclick="switchTab('login')">Вход</button>
+                <button onclick="switchTab('register')">Регистрация</button>
+            </div>
+
+            <div id="loginForm" class="form-group active">
+                <form method="POST" action="/login">
+                    <input type="text" name="username" placeholder="Логин" required>
+                    <input type="password" name="password" placeholder="Пароль" required>
+                    <button type="submit" class="btn-action">Войти</button>
+                    <div class="error" id="loginError"></div>
+                </form>
+            </div>
+
+            <div id="registerForm" class="form-group">
+                <form method="POST" action="/register">
+                    <input type="text" name="username" placeholder="Придумайте логин" required>
+                    <input type="password" name="password" placeholder="Пароль (мин. 4 символа)" required>
+                    <input type="text" name="telegram" placeholder="@telegram (опционально)">
+                    <button type="submit" class="btn-action secondary">Зарегистрироваться</button>
+                    <div class="success" id="registerSuccess"></div>
+                    <div class="error" id="registerError"></div>
+                </form>
+            </div>
+
+            <div class="info-text">🔒 Все данные защищены</div>
         </div>
+
         <script>
+            function switchTab(tab) {
+                document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.form-group').forEach(f => f.classList.remove('active'));
+                
+                if (tab === 'login') {
+                    document.querySelector('.tabs button:first-child').classList.add('active');
+                    document.getElementById('loginForm').classList.add('active');
+                } else {
+                    document.querySelector('.tabs button:last-child').classList.add('active');
+                    document.getElementById('registerForm').classList.add('active');
+                }
+            }
+
             const params = new URLSearchParams(window.location.search);
-            if (params.get('error')) {
-                document.getElementById('error').textContent = '❌ ' + params.get('error');
+            const loginError = document.getElementById('loginError');
+            const registerError = document.getElementById('registerError');
+            const registerSuccess = document.getElementById('registerSuccess');
+            
+            if (params.get('login_error')) {
+                loginError.textContent = '❌ ' + params.get('login_error');
+            }
+            if (params.get('register_error')) {
+                registerError.textContent = '❌ ' + params.get('register_error');
+                switchTab('register');
+            }
+            if (params.get('register_success')) {
+                registerSuccess.textContent = '✅ ' + params.get('register_success');
+                switchTab('login');
             }
         </script>
     </body>
     </html>
     '''
 
+# === МАРШРУТЫ ===
+
+@app.route('/')
+def home():
+    settings = load_settings()
+    if settings.get('private_mode', False) and not session.get('authorized'):
+        return login_page()
+    return main_page()
+
 @app.route('/login', methods=['POST'])
 def login():
     username = request.form.get('username', '').strip()
     password = request.form.get('password', '').strip()
     
-    users = load_users()
-    settings = load_settings()
-    
-    if username in users and users[username]['password'] == hashlib.sha256(password.encode()).hexdigest():
-        # 2FA
-        if settings.get('admin_2fa', False) and users[username].get('role') == 'admin':
+    result = login_user(username, password)
+    if result['success']:
+        settings = load_settings()
+        if settings.get('admin_2fa', False) and session.get('role') == 'admin':
             session['auth_step'] = '2fa'
-            session['username'] = username
             return '''
             <!DOCTYPE html>
             <html><head><meta charset="UTF-8"><title>2FA</title>
@@ -253,12 +423,9 @@ def login():
             </body>
             </html>
             '''
-        session['authorized'] = True
-        session['username'] = username
-        session['ip'] = get_user_ip()
         return redirect('/')
     
-    return redirect('/?error=Неверный логин или пароль')
+    return redirect(f'/?login_error={result["error"]}')
 
 @app.route('/2fa', methods=['POST'])
 def two_factor():
@@ -267,7 +434,22 @@ def two_factor():
     if code == settings.get('admin_2fa_code', ''):
         session['authorized'] = True
         return redirect('/')
-    return redirect('/?error=Неверный 2FA код')
+    return redirect('/?login_error=Неверный 2FA код')
+
+@app.route('/register', methods=['POST'])
+def register():
+    username = request.form.get('username', '').strip()
+    password = request.form.get('password', '').strip()
+    telegram = request.form.get('telegram', '').strip()
+    
+    result = register_user(username, password, telegram)
+    if result['success']:
+        session['authorized'] = True
+        session['username'] = username
+        session['role'] = 'user'
+        return redirect('/')
+    else:
+        return redirect(f'/?register_error={result["error"]}')
 
 @app.route('/logout')
 def logout():
@@ -277,18 +459,208 @@ def logout():
 def redirect(url):
     return f'<meta http-equiv="refresh" content="0;url={url}"><script>window.location.href="{url}"</script>'
 
+# === API ===
+
+@app.route('/api/wins')
+def api_wins():
+    data = load_data()
+    return jsonify({'wins': data['wins']})
+
+@app.route('/api/add', methods=['POST'])
+def api_add():
+    data = load_data()
+    req = request.json
+    user = req.get('user', '').strip()
+    prize = req.get('prize', '').strip()
+    value = req.get('value', 0)
+    comment = req.get('comment', '').strip()
+    if not user or not prize or value <= 0:
+        return jsonify({'success': False, 'error': 'Заполните все поля'})
+    win = {
+        'id': data['next_id'],
+        'user': user,
+        'prize': prize,
+        'value': value,
+        'comment': comment,
+        'likes': 0,
+        'date': datetime.now().strftime('%d.%m.%Y %H:%M')
+    }
+    data['wins'].append(win)
+    data['next_id'] += 1
+    save_data(data)
+    return jsonify({'success': True})
+
+@app.route('/api/delete', methods=['POST'])
+def api_delete():
+    data = load_data()
+    win_id = request.json.get('id')
+    new_wins = [w for w in data['wins'] if w['id'] != win_id]
+    if len(new_wins) == len(data['wins']):
+        return jsonify({'success': False, 'error': 'Запись не найдена'})
+    data['wins'] = new_wins
+    save_data(data)
+    return jsonify({'success': True})
+
+@app.route('/api/user/<name>')
+def api_user(name):
+    data = load_data()
+    user_wins = [w for w in data['wins'] if w['user'].lower() == name.lower()]
+    users = load_users()
+    user_data = users.get(name, {})
+    return jsonify({
+        'found': len(user_wins) > 0,
+        'count': len(user_wins),
+        'total_value': sum(w['value'] for w in user_wins),
+        'wins': user_wins,
+        'telegram': user_data.get('telegram', ''),
+        'role': user_data.get('role', 'user'),
+        'registered': user_data.get('registered', ''),
+        'banned': user_data.get('banned', False)
+    })
+
+@app.route('/api/like', methods=['POST'])
+def api_like():
+    data = load_data()
+    win_id = request.json.get('id')
+    for w in data['wins']:
+        if w['id'] == win_id:
+            w['likes'] = w.get('likes', 0) + 1
+            save_data(data)
+            return jsonify({'success': True})
+    return jsonify({'success': False, 'error': 'Не найдено'})
+
+@app.route('/api/raffles')
+def api_raffles():
+    return jsonify(load_raffles())
+
+@app.route('/api/raffle', methods=['POST'])
+def api_raffle():
+    raffles = load_raffles()
+    req = request.json
+    raffle = {
+        'id': len(raffles) + 1,
+        'title': req.get('title', ''),
+        'prize': req.get('prize', ''),
+        'value': req.get('value', 0),
+        'type': req.get('type', 'standard'),
+        'end_time': req.get('end_time', ''),
+        'status': 'active',
+        'participants': [],
+        'created': datetime.now().strftime('%d.%m.%Y %H:%M')
+    }
+    raffles.append(raffle)
+    save_raffles(raffles)
+    return jsonify({'success': True})
+
+@app.route('/api/raffle/join', methods=['POST'])
+def api_join_raffle():
+    raffles = load_raffles()
+    req = request.json
+    for r in raffles:
+        if r['id'] == req.get('id'):
+            if req.get('user') not in r['participants']:
+                r['participants'].append(req.get('user'))
+                save_raffles(raffles)
+                return jsonify({'success': True})
+            return jsonify({'success': False, 'error': 'Уже участвуете'})
+    return jsonify({'success': False, 'error': 'Не найдено'})
+
+@app.route('/api/announcements')
+def api_announcements():
+    data = load_announcements()
+    return jsonify(data)
+
+@app.route('/api/announcement', methods=['POST'])
+def api_announcement():
+    data = load_announcements()
+    req = request.json
+    data.append({
+        'title': req.get('title', ''),
+        'text': req.get('text', ''),
+        'date': datetime.now().strftime('%d.%m.%Y %H:%M')
+    })
+    save_announcements(data)
+    return jsonify({'success': True})
+
+@app.route('/api/feedback')
+def api_feedback():
+    data = load_feedback()
+    return jsonify(data)
+
+@app.route('/api/feedback', methods=['POST'])
+def api_feedback_post():
+    data = load_feedback()
+    req = request.json
+    data.append({
+        'user': req.get('user', 'Аноним'),
+        'text': req.get('text', ''),
+        'rating': req.get('rating', 5),
+        'date': datetime.now().strftime('%d.%m.%Y %H:%M')
+    })
+    save_feedback(data)
+    return jsonify({'success': True})
+
+@app.route('/api/settings')
+def api_settings():
+    return jsonify(load_settings())
+
+@app.route('/api/settings/code', methods=['POST'])
+def api_settings_code():
+    settings = load_settings()
+    new_code = request.json.get('new_code', '')
+    if len(new_code) < 4:
+        return jsonify({'success': False, 'error': 'Код минимум 4 символа'})
+    settings['code'] = new_code
+    save_settings(settings)
+    return jsonify({'success': True})
+
+@app.route('/api/settings/private', methods=['POST'])
+def api_settings_private():
+    settings = load_settings()
+    settings['private_mode'] = request.json.get('enabled', False)
+    save_settings(settings)
+    return jsonify({'success': True})
+
+@app.route('/api/settings/2fa', methods=['POST'])
+def api_settings_2fa():
+    settings = load_settings()
+    settings['admin_2fa'] = request.json.get('enabled', False)
+    settings['admin_2fa_code'] = request.json.get('code', '123456')
+    save_settings(settings)
+    return jsonify({'success': True})
+
+@app.route('/api/user/status')
+def api_user_status():
+    if 'username' in session:
+        users = load_users()
+        user = users.get(session['username'], {})
+        return jsonify({
+            'logged_in': True,
+            'username': session['username'],
+            'role': user.get('role', 'user'),
+            'telegram': user.get('telegram', ''),
+            'banned': user.get('banned', False)
+        })
+    return jsonify({'logged_in': False})
+
+@app.route('/background')
+def background():
+    return send_file('background.jpg')
+
 # === ОСНОВНАЯ СТРАНИЦА ===
 
 def main_page():
-    return '''
+    username = session.get('username', 'Гость')
+    role = session.get('role', 'user')
+    return f'''
     <!DOCTYPE html>
     <html>
     <head>
         <meta charset="UTF-8">
         <title>AniCosmo — Розыгрыши</title>
         <style>
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            body {
+            * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+            body {{
                 font-family: 'Segoe UI', Arial, sans-serif;
                 min-height: 100vh;
                 background-image: url('/background');
@@ -297,49 +669,80 @@ def main_page():
                 background-attachment: fixed;
                 color: white;
                 position: relative;
-            }
-            .overlay {
+            }}
+            .overlay {{
                 position: fixed;
                 top: 0; left: 0; width: 100%; height: 100%;
                 background: rgba(0, 0, 0, 0.7);
                 z-index: 0;
-            }
-            .container {
+            }}
+            .container {{
                 position: relative;
                 z-index: 1;
                 max-width: 1100px;
                 margin: 0 auto;
                 padding: 40px 20px 100px 20px;
-            }
+            }}
 
-            #screen-main {
+            .user-bar {{
+                position: fixed;
+                top: 15px;
+                right: 15px;
+                z-index: 50;
+                display: flex;
+                gap: 12px;
+                align-items: center;
+                background: rgba(0,0,0,0.5);
+                backdrop-filter: blur(8px);
+                padding: 8px 16px;
+                border-radius: 30px;
+                border: 1px solid rgba(255,255,255,0.05);
+            }}
+            .user-bar .username {{ font-size: 14px; opacity: 0.8; }}
+            .user-bar .role-badge {{
+                font-size: 11px;
+                padding: 2px 12px;
+                border-radius: 20px;
+                background: rgba(255,215,0,0.15);
+                color: #ffd93d;
+            }}
+            .user-bar .role-badge.admin {{ background: rgba(255,107,107,0.2); color: #ff6b6b; }}
+            .user-bar .logout-link {{
+                color: rgba(255,255,255,0.3);
+                text-decoration: none;
+                font-size: 13px;
+                transition: color 0.3s;
+            }}
+            .user-bar .logout-link:hover {{ color: #ff6b6b; }}
+
+            #screen-main {{
                 text-align: center;
                 padding: 80px 20px;
                 transition: opacity 0.8s, transform 0.8s;
-            }
-            #screen-main h1 {
+            }}
+            #screen-main h1 {{
                 font-size: 52px;
                 font-weight: 700;
                 text-shadow: 0 0 60px rgba(0,0,0,0.8);
                 margin-bottom: 25px;
-            }
-            #screen-main .channel-block { margin-bottom: 45px; }
-            #screen-main .channel-block .label {
+            }}
+            #screen-main .channel-block {{ margin-bottom: 45px; }}
+            #screen-main .channel-block .label {{
                 font-size: 18px;
                 opacity: 0.6;
                 letter-spacing: 4px;
                 text-transform: uppercase;
                 margin-bottom: 8px;
-            }
-            #screen-main .channel-block a {
+            }}
+            #screen-main .channel-block a {{
                 font-size: 28px;
                 color: #ff6b6b;
                 text-decoration: none;
                 font-weight: 600;
                 transition: color 0.3s;
-            }
-            #screen-main .channel-block a:hover { color: #ff8a8a; }
-            .btn {
+            }}
+            #screen-main .channel-block a:hover {{ color: #ff8a8a; }}
+            .btn {{
                 padding: 16px 60px;
                 font-size: 20px;
                 font-weight: 500;
@@ -352,63 +755,61 @@ def main_page():
                 transition: all 0.4s;
                 text-transform: uppercase;
                 backdrop-filter: blur(4px);
-            }
-            .btn:hover {
+            }}
+            .btn:hover {{
                 background: rgba(255,255,255,0.15);
                 border-color: rgba(255,255,255,0.5);
                 transform: scale(1.03);
-            }
+            }}
 
-            #screen-content {
+            #screen-content {{
                 display: none;
                 opacity: 0;
                 transition: opacity 0.8s;
-            }
-            #screen-content.active {
+            }}
+            #screen-content.active {{
                 display: block;
                 opacity: 1;
-            }
+            }}
 
-            .card {
+            .card {{
                 background: rgba(255,255,255,0.06);
                 backdrop-filter: blur(10px);
                 border-radius: 16px;
                 padding: 25px;
                 margin-bottom: 25px;
                 border: 1px solid rgba(255,255,255,0.08);
-            }
-            .card h3 {
+            }}
+            .card h3 {{
                 font-size: 20px;
                 font-weight: 500;
                 margin-bottom: 15px;
                 letter-spacing: 1px;
                 color: #ff6b6b;
-            }
+            }}
 
-            .leaderboard-table {
+            .leaderboard-table {{
                 width: 100%;
                 border-collapse: collapse;
-            }
+            }}
             .leaderboard-table th,
-            .leaderboard-table td {
+            .leaderboard-table td {{
                 padding: 12px 15px;
                 text-align: left;
                 border-bottom: 1px solid rgba(255,255,255,0.06);
-            }
-            .leaderboard-table th {
+            }}
+            .leaderboard-table th {{
                 color: rgba(255,255,255,0.5);
                 font-weight: 400;
                 font-size: 14px;
                 letter-spacing: 1px;
                 text-transform: uppercase;
-            }
-            .leaderboard-table tr:hover td {
-                background: rgba(255,255,255,0.03);
-            }
-            .leaderboard-table .rank { color: #ffd93d; font-weight: 600; }
-            .leaderboard-table .total { color: #6bcb77; font-weight: 600; }
+            }}
+            .leaderboard-table tr:hover td {{ background: rgba(255,255,255,0.03); }}
+            .leaderboard-table .rank {{ color: #ffd93d; font-weight: 600; }}
+            .leaderboard-table .total {{ color: #6bcb77; font-weight: 600; }}
 
-            .win-item {
+            .win-item {{
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
@@ -416,30 +817,30 @@ def main_page():
                 border-bottom: 1px solid rgba(255,255,255,0.05);
                 flex-wrap: wrap;
                 gap: 8px;
-            }
-            .win-item:last-child { border-bottom: none; }
-            .win-item .win-id { font-size: 11px; color: rgba(255,255,255,0.2); margin-right: 8px; }
-            .win-item .win-user { font-weight: 500; }
-            .win-item .win-prize { color: #ffd93d; }
-            .win-item .win-value { color: #6bcb77; font-weight: 600; }
-            .win-item .win-date { font-size: 12px; color: rgba(255,255,255,0.3); }
-            .win-item .btn-delete {
+            }}
+            .win-item:last-child {{ border-bottom: none; }}
+            .win-item .win-id {{ font-size: 11px; color: rgba(255,255,255,0.2); margin-right: 8px; }}
+            .win-item .win-user {{ font-weight: 500; }}
+            .win-item .win-prize {{ color: #ffd93d; }}
+            .win-item .win-value {{ color: #6bcb77; font-weight: 600; }}
+            .win-item .win-date {{ font-size: 12px; color: rgba(255,255,255,0.3); }}
+            .win-item .btn-delete {{
                 padding: 4px 14px; font-size: 12px;
                 color: rgba(255,107,107,0.6);
                 background: rgba(255,107,107,0.1);
                 border: 1px solid rgba(255,107,107,0.2);
                 border-radius: 20px;
                 cursor: pointer;
-            }
-            .win-item .btn-delete:hover { background: rgba(255,107,107,0.2); color: #ff6b6b; }
-            .win-item .btn-like {
+            }}
+            .win-item .btn-delete:hover {{ background: rgba(255,107,107,0.2); color: #ff6b6b; }}
+            .win-item .btn-like {{
                 padding: 4px 12px; font-size: 13px;
                 background: transparent; border: none; color: rgba(255,255,255,0.4);
                 cursor: pointer;
-            }
-            .win-item .btn-like:hover { color: #ff6b6b; }
+            }}
+            .win-item .btn-like:hover {{ color: #ff6b6b; }}
 
-            .btn-back {
+            .btn-back {{
                 margin-top: 20px;
                 padding: 12px 40px;
                 font-size: 16px;
@@ -450,21 +851,21 @@ def main_page():
                 cursor: pointer;
                 transition: all 0.4s;
                 text-transform: uppercase;
-            }
-            .btn-back:hover { background: rgba(255,255,255,0.1); color: white; }
+            }}
+            .btn-back:hover {{ background: rgba(255,255,255,0.1); color: white; }}
 
-            .footer { text-align: center; color: rgba(255,255,255,0.12); font-size: 13px; letter-spacing: 3px; padding: 30px 0 10px; }
+            .footer {{ text-align: center; color: rgba(255,255,255,0.12); font-size: 13px; letter-spacing: 3px; padding: 30px 0 10px; }}
 
-            .toast {
+            .toast {{
                 padding: 10px 20px; border-radius: 10px; display: none;
                 position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
                 z-index: 200; max-width: 90%; text-align: center;
-            }
-            .toast.success { display: block; background: rgba(107,203,119,0.95); color: white; }
-            .toast.error { display: block; background: rgba(255,107,107,0.95); color: white; }
-            .toast.info { display: block; background: rgba(255,217,61,0.95); color: #1a1a2e; }
+            }}
+            .toast.success {{ display: block; background: rgba(107,203,119,0.95); color: white; }}
+            .toast.error {{ display: block; background: rgba(255,107,107,0.95); color: white; }}
+            .toast.info {{ display: block; background: rgba(255,217,61,0.95); color: #1a1a2e; }}
 
-            .fab {
+            .fab {{
                 position: fixed; bottom: 30px; right: 30px;
                 width: 64px; height: 64px; border-radius: 50%;
                 background: linear-gradient(135deg, #ff6b6b, #ee5a24);
@@ -472,86 +873,95 @@ def main_page():
                 box-shadow: 0 4px 20px rgba(238,90,36,0.4);
                 transition: all 0.3s; z-index: 50;
                 display: none; align-items: center; justify-content: center;
-            }
-            .fab:hover { transform: scale(1.1); box-shadow: 0 6px 30px rgba(238,90,36,0.6); }
-            .fab.show { display: flex; }
+            }}
+            .fab:hover {{ transform: scale(1.1); box-shadow: 0 6px 30px rgba(238,90,36,0.6); }}
+            .fab.show {{ display: flex; }}
 
-            .modal {
+            .modal {{
                 display: none; position: fixed; top: 0; left: 0;
                 width: 100%; height: 100%; background: rgba(0,0,0,0.7);
                 z-index: 100; justify-content: center; align-items: center;
-            }
-            .modal.active { display: flex; }
-            .modal-content {
+            }}
+            .modal.active {{ display: flex; }}
+            .modal-content {{
                 background: rgba(30,30,50,0.95); backdrop-filter: blur(10px);
                 padding: 30px; border-radius: 16px; max-width: 500px; width: 90%;
                 border: 1px solid rgba(255,255,255,0.1);
                 max-height: 90vh; overflow-y: auto;
-            }
-            .modal-content h3 { margin-bottom: 15px; color: #ff6b6b; text-align: center; font-size: 24px; }
-            .modal-content .form-group { display: flex; flex-direction: column; gap: 12px; margin-bottom: 15px; }
-            .modal-content .form-group input, .modal-content .form-group select, .modal-content .form-group textarea {
+            }}
+            .modal-content h3 {{ margin-bottom: 15px; color: #ff6b6b; text-align: center; font-size: 24px; }}
+            .modal-content .form-group {{ display: flex; flex-direction: column; gap: 12px; margin-bottom: 15px; }}
+            .modal-content .form-group input, .modal-content .form-group select, .modal-content .form-group textarea {{
                 padding: 12px 16px; border-radius: 10px;
                 border: 1px solid rgba(255,255,255,0.15);
                 background: rgba(255,255,255,0.06); color: white; font-size: 15px; width: 100%;
-            }
-            .modal-content .form-group input:focus, .modal-content .form-group select:focus, .modal-content .form-group textarea:focus {
+            }}
+            .modal-content .form-group input:focus, .modal-content .form-group select:focus, .modal-content .form-group textarea:focus {{
                 outline: none; border-color: #ff6b6b;
-            }
-            .modal-content .form-group input::placeholder, .modal-content .form-group textarea::placeholder {
+            }}
+            .modal-content .form-group input::placeholder, .modal-content .form-group textarea::placeholder {{
                 color: rgba(255,255,255,0.4);
-            }
-            .modal-content .form-group input:disabled { opacity: 0.4; cursor: not-allowed; }
-            .modal-content .form-group textarea { resize: vertical; min-height: 60px; font-family: inherit; }
-            .modal-buttons {
+            }}
+            .modal-content .form-group input:disabled {{ opacity: 0.4; cursor: not-allowed; }}
+            .modal-content .form-group textarea {{ resize: vertical; min-height: 60px; font-family: inherit; }}
+            .modal-buttons {{
                 display: flex; gap: 12px; justify-content: center; margin-top: 10px;
-            }
-            .modal-buttons button {
+            }}
+            .modal-buttons button {{
                 padding: 10px 30px; border-radius: 10px; border: none; font-size: 15px; cursor: pointer;
-            }
-            .modal-buttons .btn-submit-modal { background: #ff6b6b; color: white; }
-            .modal-buttons .btn-submit-modal:hover:not(:disabled) { background: #ee5a24; }
-            .modal-buttons .btn-submit-modal:disabled { opacity: 0.3; cursor: not-allowed; }
-            .modal-buttons .btn-cancel { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.6); }
-            .modal-buttons .btn-cancel:hover { background: rgba(255,255,255,0.15); }
-            .modal-content .code-status { text-align: center; font-size: 14px; min-height: 24px; }
-            .modal-content .code-status.success { color: #6bcb77; }
-            .modal-content .code-status.error { color: #ff6b6b; }
+            }}
+            .modal-buttons .btn-submit-modal {{ background: #ff6b6b; color: white; }}
+            .modal-buttons .btn-submit-modal:hover:not(:disabled) {{ background: #ee5a24; }}
+            .modal-buttons .btn-submit-modal:disabled {{ opacity: 0.3; cursor: not-allowed; }}
+            .modal-buttons .btn-cancel {{ background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.6); }}
+            .modal-buttons .btn-cancel:hover {{ background: rgba(255,255,255,0.15); }}
+            .modal-content .code-status {{ text-align: center; font-size: 14px; min-height: 24px; }}
+            .modal-content .code-status.success {{ color: #6bcb77; }}
+            .modal-content .code-status.error {{ color: #ff6b6b; }}
 
-            .level-badge {
+            .level-badge {{
                 display: inline-block; padding: 2px 12px; border-radius: 20px;
                 font-size: 12px; font-weight: 600;
-            }
+            }}
 
-            .raffle-item {
+            .raffle-item {{
                 padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
-            }
-            .raffle-item:last-child { border-bottom: none; }
-            .raffle-item .raffle-title { font-weight: 600; font-size: 18px; }
-            .raffle-item .raffle-status {
+            }}
+            .raffle-item:last-child {{ border-bottom: none; }}
+            .raffle-item .raffle-title {{ font-weight: 600; font-size: 18px; }}
+            .raffle-item .raffle-status {{
                 display: inline-block; padding: 2px 12px; border-radius: 20px; font-size: 12px;
-            }
-            .raffle-item .raffle-status.active { background: rgba(107,203,119,0.3); color: #6bcb77; }
-            .raffle-item .raffle-status.ended { background: rgba(255,107,107,0.3); color: #ff6b6b; }
-            .raffle-item .raffle-status.planned { background: rgba(255,217,61,0.3); color: #ffd93d; }
+            }}
+            .raffle-item .raffle-status.active {{ background: rgba(107,203,119,0.3); color: #6bcb77; }}
+            .raffle-item .raffle-status.ended {{ background: rgba(255,107,107,0.3); color: #ff6b6b; }}
+            .raffle-item .raffle-status.planned {{ background: rgba(255,217,61,0.3); color: #ffd93d; }}
 
-            .comment-item {
+            .comment-item {{
                 padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
                 display: flex; gap: 12px;
-            }
-            .comment-item .comment-user { font-weight: 600; color: #ff6b6b; }
-            .comment-item .comment-text { opacity: 0.8; }
+            }}
+            .comment-item .comment-user {{ font-weight: 600; color: #ff6b6b; }}
+            .comment-item .comment-text {{ opacity: 0.8; }}
 
-            @media (max-width: 600px) {
-                #screen-main h1 { font-size: 32px; }
-                .fab { width: 56px; height: 56px; font-size: 28px; bottom: 20px; right: 20px; }
-            }
+            @media (max-width: 600px) {{
+                #screen-main h1 {{ font-size: 32px; }}
+                .fab {{ width: 56px; height: 56px; font-size: 28px; bottom: 20px; right: 20px; }}
+                .user-bar {{ top: 10px; right: 10px; padding: 6px 12px; }}
+                .user-bar .username {{ font-size: 12px; }}
+            }}
         </style>
     </head>
     <body>
         <div class="overlay"></div>
-        <div class="container">
 
+        <!-- ВЕРХНЯЯ ПАНЕЛЬ ПОЛЬЗОВАТЕЛЯ -->
+        <div class="user-bar">
+            <span class="username">👤 {username}</span>
+            <span class="role-badge {'admin' if role == 'admin' else ''}">{role}</span>
+            <a href="/logout" class="logout-link">🚪</a>
+        </div>
+
+        <div class="container">
             <div id="screen-main">
                 <h1>AniCosmo — канал по Аникарду</h1>
                 <div class="channel-block">
@@ -567,19 +977,16 @@ def main_page():
                     <p style="opacity:0.6; margin-top:8px;">Управление розыгрышами AniCosmo</p>
                 </div>
 
-                <!-- СТАТИСТИКА -->
                 <div class="card" id="statsCard">
                     <h3>📊 Статистика</h3>
                     <div id="statsContent">Загрузка...</div>
                 </div>
 
-                <!-- АКТИВНЫЕ РОЗЫГРЫШИ -->
                 <div class="card" id="activeRafflesCard">
                     <h3>🎯 Активные розыгрыши</h3>
                     <div id="activeRaffles">Загрузка...</div>
                 </div>
 
-                <!-- АРХИВ РОЗЫГРЫШЕЙ -->
                 <div class="card" id="archivedRafflesCard">
                     <h3>📦 Архив розыгрышей</h3>
                     <div id="archivedRaffles">Загрузка...</div>
@@ -595,25 +1002,21 @@ def main_page():
                     <div id="recentWins">Загрузка...</div>
                 </div>
 
-                <!-- ТОП НЕДЕЛИ -->
                 <div class="card" id="topWeekCard">
                     <h3>🔥 Топ-3 недели</h3>
                     <div id="topWeek">Загрузка...</div>
                 </div>
 
-                <!-- САМЫЙ ДОРОГОЙ ПРИЗ -->
                 <div class="card" id="mostValuableCard">
                     <h3>💎 Самый дорогой приз</h3>
                     <div id="mostValuable">Загрузка...</div>
                 </div>
 
-                <!-- АНОНСЫ -->
                 <div class="card" id="announcementsCard">
                     <h3>📢 Анонсы</h3>
                     <div id="announcements">Загрузка...</div>
                 </div>
 
-                <!-- ОТЗЫВЫ -->
                 <div class="card" id="feedbackCard">
                     <h3>💬 Отзывы</h3>
                     <div id="feedbackList">Загрузка...</div>
@@ -659,7 +1062,7 @@ def main_page():
                     <input type="text" id="modalUser" placeholder="Имя участника или @telegram" disabled>
                     <input type="text" id="modalPrize" placeholder="Что выиграл" disabled>
                     <input type="number" id="modalValue" placeholder="Ценность в ПТ" disabled>
-                    <input type="text" id="modalComment" placeholder="Комментарий к выигрышу (опционально)" disabled>
+                    <input type="text" id="modalComment" placeholder="Комментарий к выигрышу" disabled>
                 </div>
                 <div class="modal-buttons">
                     <button class="btn-cancel" onclick="closeModal('addModal')">Отмена</button>
@@ -830,7 +1233,6 @@ def main_page():
             let annCodeVerified = false;
             let settingsCodeVerified = false;
 
-            // === ПЕРЕХОДЫ ===
             function goForward() {
                 const main = document.getElementById('screen-main');
                 main.style.opacity = '0';
@@ -862,7 +1264,6 @@ def main_page():
                 }, 400);
             }
 
-            // === МОДАЛКИ ===
             function openModal(id) { document.getElementById(id).classList.add('active'); }
             function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
@@ -886,7 +1287,6 @@ def main_page():
                     });
             }
 
-            // === ТОСТЫ ===
             function showToast(message, type = 'info') {
                 const toast = document.createElement('div');
                 toast.className = 'toast ' + type;
@@ -895,7 +1295,6 @@ def main_page():
                 setTimeout(() => { toast.remove(); }, 4000);
             }
 
-            // === ЗАГРУЗКА ДАННЫХ ===
             async function loadData() {
                 try {
                     const res = await fetch('/api/wins');
@@ -1024,7 +1423,6 @@ def main_page():
                 return {name:'Новичок', emoji:'🌱', color:'#6bcb77'};
             }
 
-            // === РОЗЫГРЫШИ ===
             async function loadRaffles() {
                 try {
                     const res = await fetch('/api/raffles');
@@ -1053,8 +1451,7 @@ def main_page():
             function checkRaffleCode() {
                 const code = document.getElementById('raffleCode').value.trim();
                 const status = document.getElementById('raffleCodeStatus');
-                const correct = '132547';
-                if (code === correct) {
+                if (code === '132547') {
                     status.textContent = '✅ Код верный!';
                     status.className = 'code-status success';
                     document.querySelectorAll('#raffleModal .form-group input, #raffleModal .form-group select').forEach(el => el.disabled = false);
@@ -1113,7 +1510,6 @@ def main_page():
                 } catch(e) { showToast('❌ Ошибка', 'error'); }
             }
 
-            // === СЛУЧАЙНЫЙ ВЫБОР ===
             function checkRandomCode() {
                 const code = document.getElementById('randomCode').value.trim();
                 const status = document.getElementById('randomCodeStatus');
@@ -1143,7 +1539,6 @@ def main_page():
                 document.getElementById('randomResult').innerHTML = `🎉 Победитель: <strong style="color:#ffd93d;font-size:32px;">${winner}</strong> 🎉`;
             }
 
-            // === КОЛЕСО ФОРТУНЫ ===
             function checkWheelCode() {
                 const code = document.getElementById('wheelCode').value.trim();
                 const status = document.getElementById('wheelCodeStatus');
@@ -1183,7 +1578,6 @@ def main_page():
                 }, 100);
             }
 
-            // === АНОНСЫ ===
             function checkAnnCode() {
                 const code = document.getElementById('annCode').value.trim();
                 const status = document.getElementById('annCodeStatus');
@@ -1242,7 +1636,6 @@ def main_page():
                 } catch(e) { console.error(e); }
             }
 
-            // === ОТЗЫВЫ ===
             async function submitFeedback() {
                 const user = document.getElementById('fbUser').value.trim() || 'Аноним';
                 const text = document.getElementById('fbText').value.trim();
@@ -1283,7 +1676,6 @@ def main_page():
                 } catch(e) { console.error(e); }
             }
 
-            // === ПРОФИЛЬ ===
             async function loadProfile() {
                 const user = document.getElementById('profileUser').value.trim();
                 if (!user) { showToast('❌ Введите имя участника', 'error'); return; }
@@ -1295,9 +1687,11 @@ def main_page():
                     document.getElementById('profileResult').innerHTML = `
                         <div style="padding:15px;background:rgba(255,255,255,0.03);border-radius:10px;">
                             <div style="font-size:24px;font-weight:600;">${user}</div>
-                            <div><span class="level-badge" style="background:${level.color}20;color:${level.color};border:1px solid ${level.color}40;">${level.emoji} ${level.name}</span></div>
+                            <div style="font-size:13px;opacity:0.5;">${data.telegram || 'Нет Telegram'}</div>
+                            <div style="margin-top:5px;"><span class="level-badge" style="background:${level.color}20;color:${level.color};border:1px solid ${level.color}40;">${level.emoji} ${level.name}</span></div>
                             <div style="margin-top:10px;">🏆 Выигрышей: <strong>${data.count}</strong></div>
                             <div>💰 Сумма ПТ: <strong>${data.total_value}</strong></div>
+                            ${data.role ? `<div style="font-size:12px;opacity:0.4;margin-top:4px;">Роль: ${data.role}</div>` : ''}
                             <div style="margin-top:10px;font-size:13px;opacity:0.5;">📅 Последние выигрыши:</div>
                             ${data.wins.slice(0,5).map(w => `<div style="font-size:13px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.03);">${w.prize} — ${w.value} ПТ (${w.date})</div>`).join('')}
                         </div>
@@ -1305,7 +1699,6 @@ def main_page():
                 } catch(e) { showToast('❌ Ошибка', 'error'); }
             }
 
-            // === ЛАЙКИ ===
             async function likeWin(id) {
                 try {
                     const res = await fetch('/api/like', {
@@ -1318,7 +1711,6 @@ def main_page():
                 } catch(e) { console.error(e); }
             }
 
-            // === УДАЛЕНИЕ ===
             function openDeleteModal(id) {
                 deleteTargetId = id;
                 openModal('deleteModal');
@@ -1345,22 +1737,24 @@ def main_page():
                 } catch(e) { showToast('❌ Ошибка', 'error'); }
             }
 
-            // === КОД ДЛЯ ДОБАВЛЕНИЯ ===
             function checkCode() {
                 const code = document.getElementById('modalCode').value.trim();
                 const status = document.getElementById('codeStatus');
                 if (code === '132547') {
-                    status.textContent = '✅ Код верный!'; status.className = 'code-status success';
+                    status.textContent = '✅ Код верный!';
+                    status.className = 'code-status success';
                     document.querySelectorAll('#addModal .form-group input').forEach(el => el.disabled = false);
                     document.getElementById('modalSubmitBtn').disabled = false;
                     codeVerified = true;
                 } else if (code.length > 0) {
-                    status.textContent = '❌ Неверный код'; status.className = 'code-status error';
+                    status.textContent = '❌ Неверный код';
+                    status.className = 'code-status error';
                     document.querySelectorAll('#addModal .form-group input').forEach(el => el.disabled = true);
                     document.getElementById('modalSubmitBtn').disabled = true;
                     codeVerified = false;
                 } else {
-                    status.textContent = ''; status.className = 'code-status';
+                    status.textContent = '';
+                    status.className = 'code-status';
                     document.querySelectorAll('#addModal .form-group input').forEach(el => el.disabled = true);
                     document.getElementById('modalSubmitBtn').disabled = true;
                     codeVerified = false;
@@ -1385,14 +1779,12 @@ def main_page():
                     if (result.success) {
                         showToast('✅ Выигрыш добавлен! 🎉', 'success');
                         closeModal('addModal');
-                        // АНИМАЦИЯ КОНФЕТТИ
                         confetti();
                         loadData();
                     } else { showToast('❌ ' + result.error, 'error'); }
                 } catch(e) { showToast('❌ Ошибка', 'error'); }
             }
 
-            // === КОНФЕТТИ ===
             function confetti() {
                 const colors = ['#ff6b6b', '#ffd93d', '#6bcb77', '#4d96ff', '#ff6bff'];
                 for (let i = 0; i < 80; i++) {
@@ -1416,7 +1808,6 @@ def main_page():
                 }
             }
 
-            // === НАСТРОЙКИ ===
             function checkSettingsCode() {
                 const code = document.getElementById('settingsCode').value.trim();
                 const status = document.getElementById('settingsCodeStatus');
@@ -1486,183 +1877,10 @@ def main_page():
                     }
                 }
             });
-
-            // Автозагрузка при открытии
-            document.addEventListener('DOMContentLoaded', () => {
-                // Данные загрузятся при переходе на второй экран
-            });
         </script>
     </body>
     </html>
     '''
-
-# === API ===
-
-@app.route('/api/wins')
-def api_wins():
-    data = load_data()
-    return jsonify({'wins': data['wins']})
-
-@app.route('/api/add', methods=['POST'])
-def api_add():
-    data = load_data()
-    req = request.json
-    user = req.get('user', '').strip()
-    prize = req.get('prize', '').strip()
-    value = req.get('value', 0)
-    comment = req.get('comment', '').strip()
-    if not user or not prize or value <= 0:
-        return jsonify({'success': False, 'error': 'Заполните все поля'})
-    win = {
-        'id': data['next_id'],
-        'user': user,
-        'prize': prize,
-        'value': value,
-        'comment': comment,
-        'likes': 0,
-        'date': datetime.now().strftime('%d.%m.%Y %H:%M')
-    }
-    data['wins'].append(win)
-    data['next_id'] += 1
-    save_data(data)
-    return jsonify({'success': True})
-
-@app.route('/api/delete', methods=['POST'])
-def api_delete():
-    data = load_data()
-    win_id = request.json.get('id')
-    new_wins = [w for w in data['wins'] if w['id'] != win_id]
-    if len(new_wins) == len(data['wins']):
-        return jsonify({'success': False, 'error': 'Запись не найдена'})
-    data['wins'] = new_wins
-    save_data(data)
-    return jsonify({'success': True})
-
-@app.route('/api/user/<name>')
-def api_user(name):
-    data = load_data()
-    user_wins = [w for w in data['wins'] if w['user'].lower() == name.lower()]
-    return jsonify({
-        'found': len(user_wins) > 0,
-        'count': len(user_wins),
-        'total_value': sum(w['value'] for w in user_wins),
-        'wins': user_wins
-    })
-
-@app.route('/api/like', methods=['POST'])
-def api_like():
-    data = load_data()
-    win_id = request.json.get('id')
-    for w in data['wins']:
-        if w['id'] == win_id:
-            w['likes'] = w.get('likes', 0) + 1
-            save_data(data)
-            return jsonify({'success': True})
-    return jsonify({'success': False, 'error': 'Не найдено'})
-
-@app.route('/api/raffles')
-def api_raffles():
-    return jsonify(load_raffles())
-
-@app.route('/api/raffle', methods=['POST'])
-def api_raffle():
-    raffles = load_raffles()
-    req = request.json
-    raffle = {
-        'id': len(raffles) + 1,
-        'title': req.get('title', ''),
-        'prize': req.get('prize', ''),
-        'value': req.get('value', 0),
-        'type': req.get('type', 'standard'),
-        'end_time': req.get('end_time', ''),
-        'status': 'active',
-        'participants': [],
-        'created': datetime.now().strftime('%d.%m.%Y %H:%M')
-    }
-    raffles.append(raffle)
-    save_raffles(raffles)
-    return jsonify({'success': True})
-
-@app.route('/api/raffle/join', methods=['POST'])
-def api_join_raffle():
-    raffles = load_raffles()
-    req = request.json
-    for r in raffles:
-        if r['id'] == req.get('id'):
-            if req.get('user') not in r['participants']:
-                r['participants'].append(req.get('user'))
-                save_raffles(raffles)
-                return jsonify({'success': True})
-            return jsonify({'success': False, 'error': 'Уже участвуете'})
-    return jsonify({'success': False, 'error': 'Не найдено'})
-
-@app.route('/api/announcements')
-def api_announcements():
-    data = load_announcements()
-    return jsonify(data)
-
-@app.route('/api/announcement', methods=['POST'])
-def api_announcement():
-    data = load_announcements()
-    req = request.json
-    data.append({
-        'title': req.get('title', ''),
-        'text': req.get('text', ''),
-        'date': datetime.now().strftime('%d.%m.%Y %H:%M')
-    })
-    save_announcements(data)
-    return jsonify({'success': True})
-
-@app.route('/api/feedback')
-def api_feedback():
-    data = load_feedback()
-    return jsonify(data)
-
-@app.route('/api/feedback', methods=['POST'])
-def api_feedback_post():
-    data = load_feedback()
-    req = request.json
-    data.append({
-        'user': req.get('user', 'Аноним'),
-        'text': req.get('text', ''),
-        'rating': req.get('rating', 5),
-        'date': datetime.now().strftime('%d.%m.%Y %H:%M')
-    })
-    save_feedback(data)
-    return jsonify({'success': True})
-
-@app.route('/api/settings')
-def api_settings():
-    return jsonify(load_settings())
-
-@app.route('/api/settings/code', methods=['POST'])
-def api_settings_code():
-    settings = load_settings()
-    new_code = request.json.get('new_code', '')
-    if len(new_code) < 4:
-        return jsonify({'success': False, 'error': 'Код минимум 4 символа'})
-    settings['code'] = new_code
-    save_settings(settings)
-    return jsonify({'success': True})
-
-@app.route('/api/settings/private', methods=['POST'])
-def api_settings_private():
-    settings = load_settings()
-    settings['private_mode'] = request.json.get('enabled', False)
-    save_settings(settings)
-    return jsonify({'success': True})
-
-@app.route('/api/settings/2fa', methods=['POST'])
-def api_settings_2fa():
-    settings = load_settings()
-    settings['admin_2fa'] = request.json.get('enabled', False)
-    settings['admin_2fa_code'] = request.json.get('code', '123456')
-    save_settings(settings)
-    return jsonify({'success': True})
-
-@app.route('/background')
-def background():
-    return send_file('background.jpg')
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
