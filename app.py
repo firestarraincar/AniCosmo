@@ -24,25 +24,66 @@ def home():
                 display: flex;
                 justify-content: center;
                 align-items: center;
-                background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+                background-image: url('/background');
+                background-size: cover;
+                background-position: center;
+                background-repeat: no-repeat;
                 color: white;
                 overflow: hidden;
-                transition: background 0.5s;
+                position: relative;
+            }
+
+            /* Тёмная подложка поверх фона */
+            .overlay {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.55);
+                z-index: 1;
             }
 
             /* === ЭКРАН 1: Главный === */
             #screen-main {
-                text-align: center;
+                position: relative;
                 z-index: 10;
+                text-align: center;
                 transition: opacity 0.8s, transform 0.8s;
+                padding: 20px;
             }
 
             #screen-main h1 {
-                font-size: 72px;
-                font-weight: 300;
-                letter-spacing: 8px;
-                text-shadow: 0 0 40px rgba(255, 107, 107, 0.3);
-                margin-bottom: 50px;
+                font-size: 52px;
+                font-weight: 700;
+                letter-spacing: 2px;
+                text-shadow: 0 0 60px rgba(0,0,0,0.8);
+                margin-bottom: 25px;
+            }
+
+            #screen-main .channel-block {
+                margin-bottom: 45px;
+            }
+
+            #screen-main .channel-block .label {
+                font-size: 18px;
+                opacity: 0.6;
+                letter-spacing: 4px;
+                text-transform: uppercase;
+                margin-bottom: 8px;
+            }
+
+            #screen-main .channel-block a {
+                font-size: 28px;
+                color: #ff6b6b;
+                text-decoration: none;
+                font-weight: 600;
+                transition: color 0.3s;
+                text-shadow: 0 0 30px rgba(255, 107, 107, 0.2);
+            }
+
+            #screen-main .channel-block a:hover {
+                color: #ff8a8a;
             }
 
             #screen-main .btn-start {
@@ -51,19 +92,20 @@ def home():
                 font-weight: 500;
                 letter-spacing: 3px;
                 color: white;
-                background: transparent;
-                border: 2px solid rgba(255, 255, 255, 0.3);
+                background: rgba(255, 255, 255, 0.08);
+                border: 2px solid rgba(255, 255, 255, 0.25);
                 border-radius: 50px;
                 cursor: pointer;
                 transition: all 0.4s;
                 text-transform: uppercase;
+                backdrop-filter: blur(4px);
             }
 
             #screen-main .btn-start:hover {
-                background: rgba(255, 255, 255, 0.1);
-                border-color: rgba(255, 255, 255, 0.6);
+                background: rgba(255, 255, 255, 0.15);
+                border-color: rgba(255, 255, 255, 0.5);
                 transform: scale(1.03);
-                box-shadow: 0 0 30px rgba(255, 255, 255, 0.05);
+                box-shadow: 0 0 40px rgba(255, 255, 255, 0.05);
             }
 
             /* === ЭКРАН 2: Контент (изначально скрыт) === */
@@ -80,6 +122,7 @@ def home():
                 pointer-events: none;
                 transition: opacity 0.8s;
                 padding: 40px;
+                z-index: 10;
             }
 
             #screen-content.active {
@@ -97,33 +140,40 @@ def home():
                 font-weight: 300;
                 letter-spacing: 4px;
                 margin-bottom: 30px;
+                text-shadow: 0 0 40px rgba(0,0,0,0.5);
             }
 
             #screen-content .content-box p {
                 font-size: 20px;
-                opacity: 0.7;
+                opacity: 0.8;
                 line-height: 1.8;
+                text-shadow: 0 0 20px rgba(0,0,0,0.5);
             }
 
-            /* Маленький индикатор внизу */
             .footer {
                 position: fixed;
                 bottom: 30px;
                 left: 0;
                 width: 100%;
                 text-align: center;
-                color: rgba(255,255,255,0.15);
+                color: rgba(255,255,255,0.12);
                 font-size: 13px;
-                letter-spacing: 2px;
+                letter-spacing: 3px;
                 z-index: 1;
             }
         </style>
     </head>
     <body>
 
+        <div class="overlay"></div>
+
         <!-- ЭКРАН 1: Главный -->
         <div id="screen-main">
-            <h1>Канал</h1>
+            <h1>AniCosmo — канал по Аникарду</h1>
+            <div class="channel-block">
+                <div class="label">Канал</div>
+                <a href="https://t.me/AniCosmoDay" target="_blank">@AniCosmoDay</a>
+            </div>
             <button class="btn-start" onclick="start()">Начать</button>
         </div>
 
@@ -142,17 +192,13 @@ def home():
 
         <script>
             function start() {
-                // Плавно скрываем главный экран
                 const main = document.getElementById('screen-main');
                 main.style.opacity = '0';
                 main.style.transform = 'scale(0.95)';
 
-                // Через 0.8s показываем контент
                 setTimeout(() => {
                     main.style.display = 'none';
                     document.getElementById('screen-content').classList.add('active');
-                    // Меняем фон
-                    document.body.style.background = 'linear-gradient(135deg, #0f0c29, #302b63, #24243e)';
                 }, 800);
             }
         </script>
@@ -160,6 +206,10 @@ def home():
     </body>
     </html>
     '''
+
+@app.route('/background')
+def background():
+    return send_file('background.jpg')
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
