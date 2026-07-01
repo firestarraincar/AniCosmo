@@ -756,78 +756,121 @@ def main_page():
             var skinCodeVerified = false;
             var rankCodeVerified = false;
             var settingsCodeVerified = false;
-
+        
             function goForward() {
                 var main = document.getElementById('screen-main');
+                if (!main) {
+                    console.error('screen-main not found');
+                    return;
+                }
                 main.style.opacity = '0';
                 main.style.transform = 'scale(0.95)';
                 setTimeout(function() {
                     main.style.display = 'none';
                     var content = document.getElementById('screen-content');
-                    content.style.display = 'block';
-                    setTimeout(function() {
-                        content.classList.add('active');
-                        document.getElementById('fab').classList.add('show');
-                    }, 50);
-                    loadData();
+                    if (content) {
+                        content.style.display = 'block';
+                        setTimeout(function() {
+                            content.classList.add('active');
+                            var fab = document.getElementById('fab');
+                            if (fab) fab.classList.add('show');
+                            loadData();
+                        }, 50);
+                    }
                 }, 500);
             }
-
+        
             function goBack() {
                 var content = document.getElementById('screen-content');
+                if (!content) return;
                 content.classList.remove('active');
-                document.getElementById('fab').classList.remove('show');
+                var fab = document.getElementById('fab');
+                if (fab) fab.classList.remove('show');
                 setTimeout(function() {
                     content.style.display = 'none';
                     var main = document.getElementById('screen-main');
-                    main.style.display = 'block';
-                    setTimeout(function() {
-                        main.style.opacity = '1';
-                        main.style.transform = 'scale(1)';
-                    }, 50);
+                    if (main) {
+                        main.style.display = 'block';
+                        setTimeout(function() {
+                            main.style.opacity = '1';
+                            main.style.transform = 'scale(1)';
+                        }, 50);
+                    }
                 }, 400);
             }
-
-            function openModal(id) { document.getElementById(id).classList.add('active'); }
-            function closeModal(id) { document.getElementById(id).classList.remove('active'); }
-
+        
+            function openModal(id) { 
+                var el = document.getElementById(id);
+                if (el) el.classList.add('active'); 
+            }
+            function closeModal(id) { 
+                var el = document.getElementById(id);
+                if (el) el.classList.remove('active'); 
+            }
+        
             function openMainMenu() { openModal('mainMenu'); }
-            function openAnnouncementModal() { openModal('announcementModal'); document.getElementById('annCode').focus(); }
-            function openGivePTModal() { openModal('givePTModal'); document.getElementById('ptCode').focus(); }
-            function openGiveSkinModal() { openModal('giveSkinModal'); document.getElementById('skinCode').focus(); }
-            function openGiveRankModal() { openModal('giveRankModal'); document.getElementById('rankCode').focus(); }
+            function openAnnouncementModal() { 
+                openModal('announcementModal'); 
+                var codeInput = document.getElementById('annCode');
+                if (codeInput) codeInput.focus();
+            }
+            function openGivePTModal() { 
+                openModal('givePTModal'); 
+                var codeInput = document.getElementById('ptCode');
+                if (codeInput) codeInput.focus();
+            }
+            function openGiveSkinModal() { 
+                openModal('giveSkinModal'); 
+                var codeInput = document.getElementById('skinCode');
+                if (codeInput) codeInput.focus();
+            }
+            function openGiveRankModal() { 
+                openModal('giveRankModal'); 
+                var codeInput = document.getElementById('rankCode');
+                if (codeInput) codeInput.focus();
+            }
             function openRequestSkinModal() { openModal('requestSkinModal'); }
             function openSettingsModal() { 
                 openModal('settingsModal'); 
-                document.getElementById('settingsCode').focus();
+                var codeInput = document.getElementById('settingsCode');
+                if (codeInput) codeInput.focus();
                 fetch('/api/settings')
                     .then(function(r) { return r.json(); })
                     .then(function(d) {
-                        document.getElementById('privateMode').checked = d.private_mode || false;
-                    });
+                        var pm = document.getElementById('privateMode');
+                        if (pm) pm.checked = d.private_mode || false;
+                    })
+                    .catch(function(e) { console.error(e); });
             }
-
+        
             function showToast(message, type) {
                 type = type || 'info';
                 var toast = document.createElement('div');
                 toast.className = 'toast ' + type;
                 toast.textContent = message;
                 document.body.appendChild(toast);
-                setTimeout(function() { toast.remove(); }, 4000);
+                setTimeout(function() { 
+                    if (toast && toast.parentNode) toast.remove(); 
+                }, 4000);
             }
-
+        
             function loadData() {
                 loadProfile();
                 loadAnnouncements();
                 loadShop();
                 loadRequests();
             }
-
+        
             function loadProfile() {
                 fetch('/api/profile')
                     .then(function(r) { return r.json(); })
                     .then(function(data) {
                         var container = document.getElementById('profileContent');
+                        if (!container) return;
+                        if (data.error) {
+                            container.innerHTML = '<div style="opacity:0.4;text-align:center;">' + data.error + '</div>';
+                            return;
+                        }
                         container.innerHTML = '<div class="profile-stats">' +
                             '<div class="stat"><div class="number">' + (data.pt || 0) + '</div><div class="label">💰 ПТ</div></div>' +
                             '<div class="stat"><div class="number">' + (data.rank || 'Новичок') + '</div><div class="label">🏅 Звание</div></div>' +
@@ -836,15 +879,17 @@ def main_page():
                         (data.purchases && data.purchases.length > 0 ? '<div style="margin-top:10px;font-size:13px;opacity:0.5;">🛒 Куплено: ' + data.purchases.join(', ') + '</div>' : '');
                     })
                     .catch(function(e) {
-                        document.getElementById('profileContent').innerHTML = '<div style="opacity:0.4;text-align:center;">Ошибка загрузки</div>';
+                        var container = document.getElementById('profileContent');
+                        if (container) container.innerHTML = '<div style="opacity:0.4;text-align:center;">Ошибка загрузки</div>';
                     });
             }
-
+        
             function loadAnnouncements() {
                 fetch('/api/announcements')
                     .then(function(r) { return r.json(); })
                     .then(function(data) {
                         var container = document.getElementById('announcementsList');
+                        if (!container) return;
                         if (!data || data.length === 0) {
                             container.innerHTML = '<div style="opacity:0.4;text-align:center;padding:20px;">Нет анонсов</div>';
                             return;
@@ -879,15 +924,17 @@ def main_page():
                         container.innerHTML = html;
                     })
                     .catch(function(e) {
-                        document.getElementById('announcementsList').innerHTML = '<div style="opacity:0.4;text-align:center;">Ошибка загрузки</div>';
+                        var container = document.getElementById('announcementsList');
+                        if (container) container.innerHTML = '<div style="opacity:0.4;text-align:center;">Ошибка загрузки</div>';
                     });
             }
-
+        
             function loadShop() {
                 fetch('/api/shop')
                     .then(function(r) { return r.json(); })
                     .then(function(data) {
                         var container = document.getElementById('shopContent');
+                        if (!container) return;
                         if (!data.items || data.items.length === 0) {
                             container.innerHTML = '<div style="opacity:0.4;text-align:center;padding:20px;">Магазин пуст</div>';
                             return;
@@ -907,15 +954,17 @@ def main_page():
                         container.innerHTML = html;
                     })
                     .catch(function(e) {
-                        document.getElementById('shopContent').innerHTML = '<div style="opacity:0.4;text-align:center;">Ошибка загрузки</div>';
+                        var container = document.getElementById('shopContent');
+                        if (container) container.innerHTML = '<div style="opacity:0.4;text-align:center;">Ошибка загрузки</div>';
                     });
             }
-
+        
             function loadRequests() {
                 fetch('/api/requests')
                     .then(function(r) { return r.json(); })
                     .then(function(data) {
                         var container = document.getElementById('requestsContent');
+                        if (!container) return;
                         if (!data || data.length === 0) {
                             container.innerHTML = '<div style="opacity:0.4;text-align:center;padding:10px;">Нет заявок</div>';
                             return;
@@ -937,12 +986,13 @@ def main_page():
                         container.innerHTML = html;
                     })
                     .catch(function(e) {
-                        document.getElementById('requestsContent').innerHTML = '<div style="opacity:0.4;text-align:center;">Ошибка загрузки</div>';
+                        var container = document.getElementById('requestsContent');
+                        if (container) container.innerHTML = '<div style="opacity:0.4;text-align:center;">Ошибка загрузки</div>';
                     });
             }
-
+        
             // === АНОНСЫ ===
-
+        
             function checkAnnCode() {
                 var code = document.getElementById('annCode').value.trim();
                 var status = document.getElementById('annCodeStatus');
@@ -972,9 +1022,10 @@ def main_page():
                             document.getElementById('annSubmitBtn').disabled = true;
                             annCodeVerified = false;
                         }
-                    });
+                    })
+                    .catch(function(e) { console.error(e); });
             }
-
+        
             function submitAnnouncement() {
                 if (!annCodeVerified) { showToast('❌ Введите правильный код!', 'error'); return; }
                 var title = document.getElementById('annTitle').value.trim();
@@ -995,11 +1046,11 @@ def main_page():
                         document.getElementById('annCode').value = '';
                         document.getElementById('annCodeStatus').textContent = '';
                         loadData();
-                    } else { showToast('❌ ' + result.error, 'error'); }
+                    } else { showToast('❌ ' + (result.error || 'Ошибка'), 'error'); }
                 })
-                .catch(function(e) { showToast('❌ Ошибка', 'error'); });
+                .catch(function(e) { showToast('❌ Ошибка сервера', 'error'); });
             }
-
+        
             function react(id, emoji) {
                 fetch('/api/react', {
                     method: 'POST',
@@ -1012,9 +1063,10 @@ def main_page():
                 })
                 .catch(function(e) { console.error(e); });
             }
-
+        
             function addComment(id) {
                 var input = document.getElementById('commentInput_' + id);
+                if (!input) return;
                 var text = input.value.trim();
                 if (!text) { showToast('❌ Напишите комментарий', 'error'); return; }
                 fetch('/api/comment', {
@@ -1027,13 +1079,13 @@ def main_page():
                     if (result.success) {
                         input.value = '';
                         loadData();
-                    } else { showToast('❌ ' + result.error, 'error'); }
+                    } else { showToast('❌ ' + (result.error || 'Ошибка'), 'error'); }
                 })
                 .catch(function(e) { showToast('❌ Ошибка', 'error'); });
             }
-
+        
             // === МАГАЗИН ===
-
+        
             function buyItem(itemId) {
                 fetch('/api/buy', {
                     method: 'POST',
@@ -1045,13 +1097,13 @@ def main_page():
                     if (result.success) {
                         showToast('✅ ' + result.message, 'success');
                         loadData();
-                    } else { showToast('❌ ' + result.error, 'error'); }
+                    } else { showToast('❌ ' + (result.error || 'Ошибка'), 'error'); }
                 })
                 .catch(function(e) { showToast('❌ Ошибка', 'error'); });
             }
-
-            // === ЗАЯВКИ НА СКИНЫ ===
-
+        
+            // === ЗАЯВКИ ===
+        
             function submitRequest() {
                 var name = document.getElementById('reqSkinName').value.trim();
                 var desc = document.getElementById('reqSkinDesc').value.trim();
@@ -1071,11 +1123,11 @@ def main_page():
                         document.getElementById('reqSkinDesc').value = '';
                         document.getElementById('reqSkinEmoji').value = '';
                         loadData();
-                    } else { showToast('❌ ' + result.error, 'error'); }
+                    } else { showToast('❌ ' + (result.error || 'Ошибка'), 'error'); }
                 })
                 .catch(function(e) { showToast('❌ Ошибка', 'error'); });
             }
-
+        
             function approveRequest(id) {
                 fetch('/api/approve_request', {
                     method: 'POST',
@@ -1087,11 +1139,11 @@ def main_page():
                     if (result.success) {
                         showToast('✅ Заявка одобрена!', 'success');
                         loadData();
-                    } else { showToast('❌ ' + result.error, 'error'); }
+                    } else { showToast('❌ ' + (result.error || 'Ошибка'), 'error'); }
                 })
                 .catch(function(e) { showToast('❌ Ошибка', 'error'); });
             }
-
+        
             function rejectRequest(id) {
                 fetch('/api/reject_request', {
                     method: 'POST',
@@ -1103,13 +1155,13 @@ def main_page():
                     if (result.success) {
                         showToast('❌ Заявка отклонена', 'info');
                         loadData();
-                    } else { showToast('❌ ' + result.error, 'error'); }
+                    } else { showToast('❌ ' + (result.error || 'Ошибка'), 'error'); }
                 })
                 .catch(function(e) { showToast('❌ Ошибка', 'error'); });
             }
-
+        
             // === ВЫДАЧА ПТ ===
-
+        
             function checkPTCode() {
                 var code = document.getElementById('ptCode').value.trim();
                 var status = document.getElementById('ptCodeStatus');
@@ -1139,9 +1191,10 @@ def main_page():
                             document.getElementById('ptSubmitBtn').disabled = true;
                             ptCodeVerified = false;
                         }
-                    });
+                    })
+                    .catch(function(e) { console.error(e); });
             }
-
+        
             function submitPT() {
                 if (!ptCodeVerified) { showToast('❌ Введите правильный код!', 'error'); return; }
                 var user = document.getElementById('ptUser').value.trim();
@@ -1163,13 +1216,13 @@ def main_page():
                         document.getElementById('ptCode').value = '';
                         document.getElementById('ptCodeStatus').textContent = '';
                         loadData();
-                    } else { showToast('❌ ' + result.error, 'error'); }
+                    } else { showToast('❌ ' + (result.error || 'Ошибка'), 'error'); }
                 })
                 .catch(function(e) { showToast('❌ Ошибка', 'error'); });
             }
-
+        
             // === ВЫДАЧА СКИНА ===
-
+        
             function checkSkinCode() {
                 var code = document.getElementById('skinCode').value.trim();
                 var status = document.getElementById('skinCodeStatus');
@@ -1199,9 +1252,10 @@ def main_page():
                             document.getElementById('skinSubmitBtn').disabled = true;
                             skinCodeVerified = false;
                         }
-                    });
+                    })
+                    .catch(function(e) { console.error(e); });
             }
-
+        
             function submitSkin() {
                 if (!skinCodeVerified) { showToast('❌ Введите правильный код!', 'error'); return; }
                 var user = document.getElementById('skinUser').value.trim();
@@ -1223,13 +1277,13 @@ def main_page():
                         document.getElementById('skinCode').value = '';
                         document.getElementById('skinCodeStatus').textContent = '';
                         loadData();
-                    } else { showToast('❌ ' + result.error, 'error'); }
+                    } else { showToast('❌ ' + (result.error || 'Ошибка'), 'error'); }
                 })
                 .catch(function(e) { showToast('❌ Ошибка', 'error'); });
             }
-
+        
             // === ВЫДАЧА ЗВАНИЯ ===
-
+        
             function checkRankCode() {
                 var code = document.getElementById('rankCode').value.trim();
                 var status = document.getElementById('rankCodeStatus');
@@ -1259,9 +1313,10 @@ def main_page():
                             document.getElementById('rankSubmitBtn').disabled = true;
                             rankCodeVerified = false;
                         }
-                    });
+                    })
+                    .catch(function(e) { console.error(e); });
             }
-
+        
             function submitRank() {
                 if (!rankCodeVerified) { showToast('❌ Введите правильный код!', 'error'); return; }
                 var user = document.getElementById('rankUser').value.trim();
@@ -1283,13 +1338,13 @@ def main_page():
                         document.getElementById('rankCode').value = '';
                         document.getElementById('rankCodeStatus').textContent = '';
                         loadData();
-                    } else { showToast('❌ ' + result.error, 'error'); }
+                    } else { showToast('❌ ' + (result.error || 'Ошибка'), 'error'); }
                 })
                 .catch(function(e) { showToast('❌ Ошибка', 'error'); });
             }
-
+        
             // === НАСТРОЙКИ ===
-
+        
             function checkSettingsCode() {
                 var code = document.getElementById('settingsCode').value.trim();
                 var status = document.getElementById('settingsCodeStatus');
@@ -1316,9 +1371,10 @@ def main_page():
                             document.getElementById('settingsChangeBtn').disabled = true;
                             settingsCodeVerified = false;
                         }
-                    });
+                    })
+                    .catch(function(e) { console.error(e); });
             }
-
+        
             function changeCode() {
                 if (!settingsCodeVerified) { showToast('❌ Введите правильный код!', 'error'); return; }
                 var newCode = document.getElementById('settingsNewCode').value.trim();
@@ -1333,22 +1389,28 @@ def main_page():
                     if (result.success) {
                         showToast('✅ Код изменён!', 'success');
                         closeModal('settingsModal');
-                    } else { showToast('❌ ' + result.error, 'error'); }
+                    } else { showToast('❌ ' + (result.error || 'Ошибка'), 'error'); }
                 })
                 .catch(function(e) { showToast('❌ Ошибка', 'error'); });
             }
-
-            document.getElementById('privateMode').addEventListener('change', function() {
-                fetch('/api/settings/private', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ enabled: this.checked })
+        
+            var privateModeCheck = document.getElementById('privateMode');
+            if (privateModeCheck) {
+                privateModeCheck.addEventListener('change', function() {
+                    fetch('/api/settings/private', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ enabled: this.checked })
+                    })
+                    .catch(function(e) { console.error(e); });
                 });
-            });
-
+            }
+        
             document.addEventListener('keydown', function(e) {
                 if (e.key === 'Escape') {
-                    document.querySelectorAll('.modal.active').forEach(function(m) { m.classList.remove('active'); });
+                    document.querySelectorAll('.modal.active').forEach(function(m) { 
+                        if (m) m.classList.remove('active'); 
+                    });
                 }
             });
         </script>
