@@ -5,6 +5,7 @@ import hashlib
 from datetime import datetime
 from functools import wraps
 import sys
+import random
 
 app = Flask(__name__)
 app.secret_key = 'change-this-to-random-secret-key-12345'
@@ -44,18 +45,35 @@ def init_files():
         'wins.json': {'wins': [], 'last_id': 0},
         'shop.json': {
             'items': [
-                {'id': 1, 'name': '👑 Победитель', 'price': 500, 'category': 'rank', 'icon': '👑'},
-                {'id': 2, 'name': '⭐ Чемпион', 'price': 1000, 'category': 'rank', 'icon': '⭐'},
-                {'id': 3, 'name': '🎖 Легенда', 'price': 2000, 'category': 'rank', 'icon': '🎖'},
-                {'id': 4, 'name': '🖼 Золотая рамка', 'price': 300, 'category': 'frame', 'icon': '🖼'},
-                {'id': 5, 'name': '🖼 Серебряная рамка', 'price': 200, 'category': 'frame', 'icon': '🖼'},
-                {'id': 6, 'name': '🖼 Бронзовая рамка', 'price': 100, 'category': 'frame', 'icon': '🖼'},
-                {'id': 7, 'name': '💎 Алмазная рамка', 'price': 500, 'category': 'frame', 'icon': '💎'},
-                {'id': 8, 'name': '🐱 Аватарка Кот', 'price': 150, 'category': 'avatar', 'icon': '🐱'},
-                {'id': 9, 'name': '🐶 Аватарка Пёс', 'price': 150, 'category': 'avatar', 'icon': '🐶'},
-                {'id': 10, 'name': '🦊 Аватарка Лиса', 'price': 150, 'category': 'avatar', 'icon': '🦊'},
-                {'id': 11, 'name': '🐲 Аватарка Дракон', 'price': 300, 'category': 'avatar', 'icon': '🐲'},
-                {'id': 12, 'name': '🌈 Аватарка Радуга', 'price': 200, 'category': 'avatar', 'icon': '🌈'},
+                # Звания
+                {'id': 1, 'name': '👑 Победитель', 'price': 500, 'category': 'rank', 'icon': '👑', 'color': '#ffe66d'},
+                {'id': 2, 'name': '⭐ Чемпион', 'price': 1000, 'category': 'rank', 'icon': '⭐', 'color': '#ffd700'},
+                {'id': 3, 'name': '🎖 Легенда', 'price': 2000, 'category': 'rank', 'icon': '🎖', 'color': '#ff6b6b'},
+                # Рамки с цветами
+                {'id': 4, 'name': '🖼 Золотая рамка', 'price': 300, 'category': 'frame', 'icon': '🖼', 'color': '#ffd700'},
+                {'id': 5, 'name': '🖼 Серебряная рамка', 'price': 200, 'category': 'frame', 'icon': '🖼', 'color': '#c0c0c0'},
+                {'id': 6, 'name': '🖼 Бронзовая рамка', 'price': 100, 'category': 'frame', 'icon': '🖼', 'color': '#cd7f32'},
+                {'id': 7, 'name': '💎 Алмазная рамка', 'price': 500, 'category': 'frame', 'icon': '💎', 'color': '#00ffff'},
+                {'id': 13, 'name': '🖼 Угольная рамка', 'price': 350, 'category': 'frame', 'icon': '🖼', 'color': '#2f2f2f'},
+                {'id': 14, 'name': '🖼 Изумрудная рамка', 'price': 400, 'category': 'frame', 'icon': '🖼', 'color': '#50c878'},
+                {'id': 15, 'name': '🖼 Рубиновая рамка', 'price': 450, 'category': 'frame', 'icon': '🖼', 'color': '#e0115f'},
+                {'id': 16, 'name': '🖼 Неоновая рамка', 'price': 300, 'category': 'frame', 'icon': '🖼', 'color': '#ff00ff'},
+                # Аватарки
+                {'id': 8, 'name': '🐱 Аватарка Кот', 'price': 150, 'category': 'avatar', 'icon': '🐱', 'color': None},
+                {'id': 9, 'name': '🐶 Аватарка Пёс', 'price': 150, 'category': 'avatar', 'icon': '🐶', 'color': None},
+                {'id': 10, 'name': '🦊 Аватарка Лиса', 'price': 150, 'category': 'avatar', 'icon': '🦊', 'color': None},
+                {'id': 11, 'name': '🐲 Аватарка Дракон', 'price': 300, 'category': 'avatar', 'icon': '🐲', 'color': None},
+                {'id': 12, 'name': '🌈 Аватарка Радуга', 'price': 200, 'category': 'avatar', 'icon': '🌈', 'color': None},
+                {'id': 17, 'name': '🐼 Аватарка Панда', 'price': 200, 'category': 'avatar', 'icon': '🐼', 'color': None},
+                {'id': 18, 'name': '🦄 Аватарка Единорог', 'price': 250, 'category': 'avatar', 'icon': '🦄', 'color': None},
+                {'id': 19, 'name': '🐧 Аватарка Пингвин', 'price': 150, 'category': 'avatar', 'icon': '🐧', 'color': None},
+                {'id': 20, 'name': '🦁 Аватарка Лев', 'price': 300, 'category': 'avatar', 'icon': '🦁', 'color': None},
+                # Карты
+                {'id': 21, 'name': '♠️ Туз пик', 'price': 500, 'category': 'card', 'icon': '♠️', 'color': None},
+                {'id': 22, 'name': '♥️ Король червей', 'price': 600, 'category': 'card', 'icon': '♥️', 'color': None},
+                {'id': 23, 'name': '♦️ Дама бубен', 'price': 400, 'category': 'card', 'icon': '♦️', 'color': None},
+                {'id': 24, 'name': '♣️ Валет треф', 'price': 350, 'category': 'card', 'icon': '♣️', 'color': None},
+                {'id': 25, 'name': '🃏 Джокер', 'price': 1000, 'category': 'card', 'icon': '🃏', 'color': None},
             ]
         },
         'admin_code.txt': '132547',
@@ -136,22 +154,7 @@ def load_shop():
                 return json.load(f)
     except:
         pass
-    return {
-        'items': [
-            {'id': 1, 'name': '👑 Победитель', 'price': 500, 'category': 'rank', 'icon': '👑'},
-            {'id': 2, 'name': '⭐ Чемпион', 'price': 1000, 'category': 'rank', 'icon': '⭐'},
-            {'id': 3, 'name': '🎖 Легенда', 'price': 2000, 'category': 'rank', 'icon': '🎖'},
-            {'id': 4, 'name': '🖼 Золотая рамка', 'price': 300, 'category': 'frame', 'icon': '🖼'},
-            {'id': 5, 'name': '🖼 Серебряная рамка', 'price': 200, 'category': 'frame', 'icon': '🖼'},
-            {'id': 6, 'name': '🖼 Бронзовая рамка', 'price': 100, 'category': 'frame', 'icon': '🖼'},
-            {'id': 7, 'name': '💎 Алмазная рамка', 'price': 500, 'category': 'frame', 'icon': '💎'},
-            {'id': 8, 'name': '🐱 Аватарка Кот', 'price': 150, 'category': 'avatar', 'icon': '🐱'},
-            {'id': 9, 'name': '🐶 Аватарка Пёс', 'price': 150, 'category': 'avatar', 'icon': '🐶'},
-            {'id': 10, 'name': '🦊 Аватарка Лиса', 'price': 150, 'category': 'avatar', 'icon': '🦊'},
-            {'id': 11, 'name': '🐲 Аватарка Дракон', 'price': 300, 'category': 'avatar', 'icon': '🐲'},
-            {'id': 12, 'name': '🌈 Аватарка Радуга', 'price': 200, 'category': 'avatar', 'icon': '🌈'},
-        ]
-    }
+    return {'items': []}
 
 def save_shop(shop_data):
     try:
@@ -1088,6 +1091,7 @@ def app_page():
                 color: white;
                 cursor: pointer;
                 transition: all 0.3s;
+                margin-right: 5px;
             }}
             .shop-item button:hover {{
                 background: rgba(245,87,108,0.5);
@@ -1096,6 +1100,15 @@ def app_page():
                 color: #4ecdc4;
                 font-size: 14px;
                 margin-top: 5px;
+            }}
+            .shop-item .selected-badge {{
+                color: #ffe66d;
+                font-size: 14px;
+                margin-top: 5px;
+                border: 1px solid #ffe66d;
+                border-radius: 10px;
+                padding: 2px 10px;
+                display: inline-block;
             }}
             .wins-list {{
                 max-height: 400px;
@@ -1276,34 +1289,72 @@ def app_page():
             .user-card .make-admin-btn:hover {{
                 background: rgba(255,215,0,0.3);
             }}
-            .avatar-select {{
-                display: grid;
-                grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
-                gap: 10px;
-                margin: 10px 0;
-            }}
-            .avatar-option {{
-                font-size: 40px;
-                padding: 10px;
-                background: rgba(255,255,255,0.05);
-                border: 2px solid transparent;
-                border-radius: 10px;
-                cursor: pointer;
-                text-align: center;
-                transition: all 0.3s;
-            }}
-            .avatar-option:hover {{
-                background: rgba(255,255,255,0.1);
-                transform: scale(1.1);
-            }}
-            .avatar-option.selected {{
-                border-color: #f5576c;
-                background: rgba(245,87,108,0.2);
-            }}
             .admin-crown {{
                 color: #ffd700;
                 font-size: 20px;
                 margin-left: 5px;
+            }}
+            /* Стили для мини-игр */
+            .game-container {{
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+                gap: 20px;
+                margin-top: 20px;
+            }}
+            .game-card {{
+                background: rgba(255,255,255,0.05);
+                padding: 20px;
+                border-radius: 15px;
+                text-align: center;
+                cursor: pointer;
+                transition: all 0.3s;
+            }}
+            .game-card:hover {{
+                transform: scale(1.05);
+                background: rgba(255,255,255,0.1);
+            }}
+            .game-card .game-icon {{
+                font-size: 60px;
+                margin-bottom: 10px;
+            }}
+            .game-card .game-name {{
+                font-size: 20px;
+                font-weight: bold;
+            }}
+            .game-card .game-checkbox {{
+                margin-top: 10px;
+            }}
+            .game-card input[type="checkbox"] {{
+                width: 20px;
+                height: 20px;
+                cursor: pointer;
+                accent-color: #f5576c;
+            }}
+            .game-card .game-count {{
+                margin-top: 10px;
+            }}
+            .game-card .game-count input {{
+                width: 80px;
+                padding: 5px;
+                background: rgba(255,255,255,0.1);
+                border: 1px solid rgba(255,255,255,0.2);
+                border-radius: 10px;
+                color: white;
+                text-align: center;
+            }}
+            .game-result {{
+                margin-top: 20px;
+                padding: 20px;
+                background: rgba(255,255,255,0.05);
+                border-radius: 15px;
+                display: none;
+            }}
+            .game-result.active {{
+                display: block;
+            }}
+            .winner-text {{
+                font-size: 24px;
+                color: #ffe66d;
             }}
         </style>
     </head>
@@ -1323,6 +1374,7 @@ def app_page():
             <div class="main-menu">
                 <button onclick="showSection('profile')" class="active" id="btn-profile">👤 Профиль</button>
                 <button onclick="showSection('shop')" id="btn-shop">🛒 Магазин</button>
+                <button onclick="showSection('games')" id="btn-games">🎮 Игры</button>
                 <button onclick="showSection('wins')" id="btn-wins">🎰 Розыгрыши</button>
                 <button onclick="showSection('top')" id="btn-top">🏆 Топ</button>
                 <button onclick="showSection('competitions')" id="btn-competitions">🏆 Соревнования</button>
@@ -1330,6 +1382,7 @@ def app_page():
 
             <div id="profile-section" class="content active"></div>
             <div id="shop-section" class="content"></div>
+            <div id="games-section" class="content"></div>
             <div id="wins-section" class="content"></div>
             <div id="top-section" class="content"></div>
             <div id="competitions-section" class="content"></div>
@@ -1373,8 +1426,10 @@ def app_page():
                             <option value="rank">Звание</option>
                             <option value="frame">Рамка</option>
                             <option value="avatar">Аватарка</option>
+                            <option value="card">Карта</option>
                         </select>
                         <input type="text" id="itemIcon" placeholder="Иконка (эмодзи)">
+                        <input type="text" id="itemColor" placeholder="Цвет рамки (например #ff0000) или оставить пустым">
                         <button onclick="addShopItem()">➕ Добавить</button>
                     </div>
                     <div id="shopItemsList"></div>
@@ -1429,6 +1484,7 @@ def app_page():
                             currentUser = data.user;
                             renderProfile();
                             renderShop();
+                            renderGames();
                             renderWins();
                             renderTop();
                             renderCompetitions();
@@ -1445,6 +1501,7 @@ def app_page():
 
                 if (section === 'profile') renderProfile();
                 if (section === 'shop') renderShop();
+                if (section === 'games') renderGames();
                 if (section === 'wins') renderWins();
                 if (section === 'top') renderTop();
                 if (section === 'competitions') renderCompetitions();
@@ -1457,24 +1514,6 @@ def app_page():
                 const rank = currentUser.rank || '';
                 const isAdminUser = currentUser.is_admin || false;
                 
-                const purchasedAvatars = currentUser.purchases ? 
-                    currentUser.purchases.filter(p => p.category === 'avatar').map(p => p.icon) : [];
-                
-                let avatarHtml = '';
-                if (purchasedAvatars.length > 0) {{
-                    avatarHtml = `
-                        <div style="margin: 20px 0;">
-                            <p style="opacity:0.5; font-size:14px; margin-bottom:10px;">Выберите аватарку:</p>
-                            <div class="avatar-select">
-                                ${{purchasedAvatars.map(a => `
-                                    <div class="avatar-option ${{currentUser.avatar === a ? 'selected' : ''}}" 
-                                         onclick="changeAvatar('{{a}}')">${{a}}</div>
-                                `).join('')}}
-                            </div>
-                        </div>
-                    `;
-                }}
-                
                 section.innerHTML = `
                     <div style="text-align: center;">
                         <div class="profile-frame" style="border-color: ${{currentUser.frame_color || '#f5576c'}}">
@@ -1486,7 +1525,6 @@ def app_page():
                             ${{isAdminUser ? '<span class="admin-crown">👑</span>' : ''}}
                         </h2>
                         <p style="opacity: 0.6; margin-bottom: 20px;">${{currentUser.telegram}}</p>
-                        ${{avatarHtml}}
                         <div class="profile-info">
                             <div class="profile-card">
                                 <div class="value" style="color: #f5576c;">${{currentUser.points || 0}}</div>
@@ -1509,32 +1547,16 @@ def app_page():
                 `;
             }}
 
-            function changeAvatar(avatar) {{
-                fetch('/api/change_avatar', {{
-                    method: 'POST',
-                    headers: {{ 'Content-Type': 'application/json' }},
-                    body: JSON.stringify({{ avatar: avatar }})
-                }})
-                .then(res => res.json())
-                .then(data => {{
-                    if (data.success) {{
-                        currentUser.avatar = avatar;
-                        renderProfile();
-                    }} else {{
-                        alert('❌ ' + data.message);
-                    }}
-                }});
-            }}
-
             function renderShop() {{
                 const section = document.getElementById('shop-section');
                 fetch('/api/shop')
                     .then(res => res.json())
                     .then(data => {{
-                        const itemsByCategory = {{
-                            rank: data.items.filter(i => i.category === 'rank'),
-                            frame: data.items.filter(i => i.category === 'frame'),
-                            avatar: data.items.filter(i => i.category === 'avatar')
+                        const categories = {{
+                            rank: '⭐ Звания',
+                            frame: '🖼 Рамки',
+                            avatar: '🎨 Аватарки',
+                            card: '🃏 Карты'
                         }};
                         
                         let html = `
@@ -1542,19 +1564,31 @@ def app_page():
                             <p style="opacity: 0.6; margin-bottom: 20px;">Ваши баллы: <strong style="color: #f5576c;">${{currentUser ? currentUser.points || 0 : 0}} ПТ</strong></p>
                         `;
 
-                        for (const [category, items] of Object.entries(itemsByCategory)) {{
-                            if (items.length === 0) continue;
-                            const categoryNames = {{ rank: '⭐ Звания', frame: '🖼 Рамки', avatar: '🎨 Аватарки' }};
-                            html += `<h3 style="margin: 20px 0 10px 0;">${{categoryNames[category] || category}}</h3><div class="shop-grid">`;
+                        // Группируем по категориям
+                        const grouped = {{}};
+                        data.items.forEach(item => {{
+                            if (!grouped[item.category]) grouped[item.category] = [];
+                            grouped[item.category].push(item);
+                        }});
+
+                        for (const [category, items] of Object.entries(grouped)) {{
+                            html += `<h3 style="margin: 20px 0 10px 0;">${{categories[category] || category}}</h3><div class="shop-grid">`;
                             items.forEach(item => {{
                                 const owned = currentUser && currentUser.purchases && currentUser.purchases.some(p => p.item_id === item.id);
+                                const isSelected = (category === 'avatar' && currentUser && currentUser.avatar === item.icon) ||
+                                                  (category === 'frame' && currentUser && currentUser.frame_color === item.color) ||
+                                                  (category === 'rank' && currentUser && currentUser.rank === item.name);
                                 html += `
                                     <div class="shop-item">
                                         <div class="icon">${{item.icon}}</div>
                                         <div class="name">${{item.name}}</div>
                                         <div class="category-badge">${{category}}</div>
                                         <div class="price">${{item.price}} ПТ</div>
-                                        ${{owned ? '<div class="owned">✅ Куплено</div>' : `<button onclick="buyItem(${{item.id}})">Купить</button>`}}
+                                        ${{owned ? 
+                                            (isSelected ? '<div class="selected-badge">✅ Выбрано</div>' : 
+                                            `<button onclick="selectItem(${{item.id}}, '${{category}}')">Выбрать</button>`) : 
+                                            `<button onclick="buyItem(${{item.id}})">Купить</button>`
+                                        }}
                                     </div>
                                 `;
                             }});
@@ -1580,6 +1614,179 @@ def app_page():
                         alert('❌ ' + data.message);
                     }}
                 }});
+            }}
+
+            function selectItem(itemId, category) {{
+                fetch('/api/select_item', {{
+                    method: 'POST',
+                    headers: {{ 'Content-Type': 'application/json' }},
+                    body: JSON.stringify({{ item_id: itemId, category: category }})
+                }})
+                .then(res => res.json())
+                .then(data => {{
+                    if (data.success) {{
+                        alert('✅ ' + data.message);
+                        loadUserData();
+                    }} else {{
+                        alert('❌ ' + data.message);
+                    }}
+                }});
+            }}
+
+            function renderGames() {{
+                const section = document.getElementById('games-section');
+                section.innerHTML = `
+                    <h2 style="margin-bottom: 20px;">🎮 Мини-игры</h2>
+                    <p style="opacity: 0.6; margin-bottom: 20px;">Выберите игры и количество раундов, затем нажмите "Начать"</p>
+                    <div class="game-container">
+                        <div class="game-card">
+                            <div class="game-icon">⚽</div>
+                            <div class="game-name">Футбол</div>
+                            <div class="game-checkbox">
+                                <input type="checkbox" id="game_football" checked>
+                                <label for="game_football">Включить</label>
+                            </div>
+                            <div class="game-count">
+                                <input type="number" id="count_football" value="3" min="1" max="10">
+                                <span>раундов</span>
+                            </div>
+                        </div>
+                        <div class="game-card">
+                            <div class="game-icon">🏀</div>
+                            <div class="game-name">Баскетбол</div>
+                            <div class="game-checkbox">
+                                <input type="checkbox" id="game_basketball" checked>
+                                <label for="game_basketball">Включить</label>
+                            </div>
+                            <div class="game-count">
+                                <input type="number" id="count_basketball" value="3" min="1" max="10">
+                                <span>раундов</span>
+                            </div>
+                        </div>
+                        <div class="game-card">
+                            <div class="game-icon">🎰</div>
+                            <div class="game-name">Казино</div>
+                            <div class="game-checkbox">
+                                <input type="checkbox" id="game_casino" checked>
+                                <label for="game_casino">Включить</label>
+                            </div>
+                            <div class="game-count">
+                                <input type="number" id="count_casino" value="3" min="1" max="10">
+                                <span>раундов</span>
+                            </div>
+                        </div>
+                        <div class="game-card">
+                            <div class="game-icon">🎯</div>
+                            <div class="game-name">Дартс</div>
+                            <div class="game-checkbox">
+                                <input type="checkbox" id="game_darts" checked>
+                                <label for="game_darts">Включить</label>
+                            </div>
+                            <div class="game-count">
+                                <input type="number" id="count_darts" value="3" min="1" max="10">
+                                <span>раундов</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="text-align: center; margin-top: 20px;">
+                        <button onclick="startGames()" style="padding: 15px 60px; font-size: 20px; background: rgba(245,87,108,0.3); border: 2px solid rgba(245,87,108,0.3); border-radius: 50px; color: white; cursor: pointer; transition: all 0.3s;">
+                            🚀 Начать
+                        </button>
+                    </div>
+                    <div id="gameResult" class="game-result"></div>
+                `;
+            }}
+
+            function startGames() {{
+                const games = [];
+                const gameNames = ['football', 'basketball', 'casino', 'darts'];
+                const gameIcons = ['⚽', '🏀', '🎰', '🎯'];
+                const gameLabels = ['Футбол', 'Баскетбол', 'Казино', 'Дартс'];
+                
+                let totalGames = 0;
+                let results = [];
+                
+                gameNames.forEach((name, index) => {{
+                    const checkbox = document.getElementById('game_' + name);
+                    const count = parseInt(document.getElementById('count_' + name).value);
+                    if (checkbox && checkbox.checked) {{
+                        for (let i = 0; i < count; i++) {{
+                            games.push({{
+                                id: name,
+                                icon: gameIcons[index],
+                                label: gameLabels[index]
+                            }});
+                            totalGames++;
+                        }}
+                    }}
+                }});
+                
+                if (games.length === 0) {{
+                    alert('Выберите хотя бы одну игру!');
+                    return;
+                }}
+                
+                // Анимация
+                const resultDiv = document.getElementById('gameResult');
+                resultDiv.className = 'game-result active';
+                resultDiv.innerHTML = '<div style="text-align: center;"><p style="font-size: 24px;">🎮 Игры начались...</p><div style="margin-top: 20px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;"></div></div>';
+                
+                let currentIndex = 0;
+                const interval = setInterval(() => {{
+                    if (currentIndex >= games.length) {{
+                        clearInterval(interval);
+                        finishGames(games);
+                        return;
+                    }}
+                    const game = games[currentIndex];
+                    const container = resultDiv.querySelector('div');
+                    container.innerHTML += `<span style="font-size: 30px; animation: fadeIn 0.5s;">${{game.icon}}</span>`;
+                    currentIndex++;
+                }}, 300);
+            }}
+
+            function finishGames(games) {{
+                // Симулируем результаты
+                const results = games.map(game => {{
+                    const score = Math.floor(Math.random() * 100) + 1;
+                    return {{
+                        ...game,
+                        score: score,
+                        win: score > 50
+                    }};
+                }});
+                
+                const wins = results.filter(r => r.win).length;
+                const total = results.length;
+                const winRate = total > 0 ? Math.round((wins / total) * 100) : 0;
+                
+                const resultDiv = document.getElementById('gameResult');
+                resultDiv.innerHTML = `
+                    <div style="text-align: center;">
+                        <p style="font-size: 28px;">🏆 Результаты</p>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-top: 20px;">
+                            ${{results.map(r => `
+                                <div style="background: ${{r.win ? 'rgba(76, 205, 196, 0.2)' : 'rgba(255, 107, 107, 0.2)'}}; padding: 15px; border-radius: 10px; border: 1px solid ${{r.win ? '#4ecdc4' : '#ff6b6b'}};">
+                                    <div style="font-size: 40px;">${{r.icon}}</div>
+                                    <div style="font-weight: bold;">${{r.label}}</div>
+                                    <div style="font-size: 24px;">${{r.score}}</div>
+                                    <div>${{r.win ? '✅ Победа!' : '❌ Поражение'}}</div>
+                                </div>
+                            `).join('')}}
+                        </div>
+                        <div style="margin-top: 20px; padding: 20px; background: rgba(255,215,0,0.1); border-radius: 15px;">
+                            <p style="font-size: 20px;">Всего игр: <strong>${{total}}</strong></p>
+                            <p style="font-size: 20px;">Побед: <strong style="color: #4ecdc4;">${{wins}}</strong></p>
+                            <p style="font-size: 20px;">Процент побед: <strong style="color: #ffe66d;">${{winRate}}%</strong></p>
+                            <p style="font-size: 18px; margin-top: 10px; color: ${{winRate > 50 ? '#4ecdc4' : '#ff6b6b'}};">
+                                ${{winRate > 50 ? '🔥 Отличный результат!' : '💪 Попробуй ещё раз!'}}
+                            </p>
+                        </div>
+                        <button onclick="document.getElementById('gameResult').className='game-result'" style="margin-top: 20px; padding: 10px 30px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 50px; color: white; cursor: pointer;">
+                            ✕ Закрыть
+                        </button>
+                    </div>
+                `;
             }}
 
             function renderWins() {{
@@ -1702,11 +1909,11 @@ def app_page():
                                     <h3>${{comp.name}} ${{isFinished ? '✅ Завершено' : '🟢 Активно'}}</h3>
                                     <p style="opacity: 0.6;">Игры: ${{comp.games.join(', ')}}</p>
                                     <p style="opacity: 0.6;">Очков за победу: ${{comp.points_per_win}}</p>
-                                    <p style="opacity: 0.6;">Приз: ${{comp.prize || 'Нет'}} ({{comp.prize_type}})</p>
+                                    <p style="opacity: 0.6;">Приз: ${{comp.prize || 'Нет'}} (${{comp.prize_type}})</p>
                                     ${{isFinished ? `
                                         <div style="margin-top: 10px; background: rgba(255,215,0,0.1); padding: 10px; border-radius: 10px;">
                                             <p style="color: #ffe66d;">🏆 Результаты:</p>
-                                            ${{Object.entries(comp.results).map(([telegram, wins]) => `
+                                            ${{Object.entries(comp.results || {{}}).map(([telegram, wins]) => `
                                                 <div style="display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
                                                     <span onclick="viewUser('${{telegram}}')" style="cursor:pointer; color: #4ecdc4;">${{telegram}}</span>
                                                     <span>${{wins}} побед</span>
@@ -1927,7 +2134,7 @@ def app_page():
                         const list = document.getElementById('shopItemsList');
                         list.innerHTML = data.items.map(item => `
                             <div style="display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.05);">
-                                <span>${{item.icon}} ${{item.name}} - ${{item.price}} ПТ (${{item.category}})</span>
+                                <span>${{item.icon}} ${{item.name}} - ${{item.price}} ПТ (${{item.category}})${item.color ? ' Цвет: ' + item.color : ''}</span>
                                 <button onclick="deleteShopItem(${{item.id}})" style="background: rgba(255,0,0,0.2); border: none; color: white; padding: 5px 15px; border-radius: 5px; cursor: pointer;">🗑</button>
                             </div>
                         `).join('');
@@ -1939,6 +2146,7 @@ def app_page():
                 const price = parseInt(document.getElementById('itemPrice').value);
                 const category = document.getElementById('itemCategory').value;
                 const icon = document.getElementById('itemIcon').value;
+                const color = document.getElementById('itemColor').value;
 
                 if (!name || !price || !icon) {{
                     alert('Заполните все поля!');
@@ -1948,7 +2156,7 @@ def app_page():
                 fetch('/api/admin/shop/add', {{
                     method: 'POST',
                     headers: {{ 'Content-Type': 'application/json' }},
-                    body: JSON.stringify({{ name, price, category, icon }})
+                    body: JSON.stringify({{ name, price, category, icon, color: color || null }})
                 }})
                 .then(res => res.json())
                 .then(data => {{
@@ -1957,6 +2165,7 @@ def app_page():
                         document.getElementById('itemName').value = '';
                         document.getElementById('itemPrice').value = '';
                         document.getElementById('itemIcon').value = '';
+                        document.getElementById('itemColor').value = '';
                         loadAdminShop();
                         renderShop();
                     }} else {{
@@ -2074,17 +2283,6 @@ def app_page():
                                         <button onclick="deleteCompetition(${{comp.id}})" style="background: rgba(255,0,0,0.2); border: 1px solid rgba(255,0,0,0.2); border-radius: 10px; color: white; padding: 5px 15px; cursor: pointer;">🗑</button>
                                     </div>
                                 </div>
-                                ${{comp.status === 'active' ? `
-                                    <div style="margin-top: 10px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 5px;">
-                                        <p style="font-size: 12px; opacity: 0.5;">Результаты участников:</p>
-                                        ${{Object.entries(comp.results || {{}}).map(([telegram, wins]) => `
-                                            <div style="display: flex; justify-content: space-between; padding: 3px 0; font-size: 14px;">
-                                                <span>${{telegram}}</span>
-                                                <span>${{wins}} побед</span>
-                                            </div>
-                                        `).join('') || '<span style="opacity:0.3; font-size:12px;">Пока нет результатов</span>'}}
-                                    </div>
-                                ` : ''}}
                             </div>
                         `).join('');
                     }});
@@ -2243,6 +2441,38 @@ def api_change_avatar():
     save_users(users)
     return jsonify({'success': True, 'message': 'Аватарка изменена!'})
 
+@app.route('/api/select_item', methods=['POST'])
+@login_required
+def api_select_item():
+    data = request.get_json()
+    item_id = data.get('item_id')
+    category = data.get('category')
+    
+    users = load_users()
+    user = users.get(session['user_id'])
+    
+    # Проверяем что предмет куплен
+    purchased = user.get('purchases', [])
+    item = next((p for p in purchased if p.get('item_id') == item_id), None)
+    if not item:
+        return jsonify({'success': False, 'message': 'У вас нет этого предмета'})
+    
+    shop = load_shop()
+    shop_item = next((i for i in shop['items'] if i['id'] == item_id), None)
+    if not shop_item:
+        return jsonify({'success': False, 'message': 'Предмет не найден'})
+    
+    if category == 'avatar':
+        user['avatar'] = shop_item['icon']
+    elif category == 'frame':
+        user['frame'] = shop_item['icon']
+        user['frame_color'] = shop_item.get('color', '#f5576c')
+    elif category == 'rank':
+        user['rank'] = shop_item['name']
+    
+    save_users(users)
+    return jsonify({'success': True, 'message': f'{shop_item["name"]} выбрано!'})
+
 @app.route('/api/top')
 def api_top():
     users = load_users()
@@ -2399,7 +2629,6 @@ def admin_finish_competition():
     comp['finished_at'] = datetime.now().isoformat()
     save_competitions(comps)
     
-    # Начисляем награды
     users = load_users()
     winner_telegram = max(results, key=results.get) if results else None
     
@@ -2537,7 +2766,8 @@ def admin_add_shop():
         'name': data['name'],
         'price': data['price'],
         'category': data['category'],
-        'icon': data['icon']
+        'icon': data['icon'],
+        'color': data.get('color')
     })
     save_shop(shop)
     return jsonify({'success': True, 'message': 'Товар добавлен'})
@@ -2650,6 +2880,7 @@ def api_buy():
         'category': item['category'],
         'price': item['price'],
         'icon': item['icon'],
+        'color': item.get('color'),
         'date': datetime.now().isoformat()
     })
     
@@ -2657,8 +2888,10 @@ def api_buy():
         user['rank'] = item['name']
     elif item['category'] == 'frame':
         user['frame'] = item['icon']
-        user['frame_color'] = '#ffd700' if 'Золотая' in item['name'] else '#c0c0c0' if 'Серебряная' in item['name'] else '#cd7f32' if 'Бронзовая' in item['name'] else '#00ffff' if 'Алмазная' in item['name'] else '#f5576c'
+        user['frame_color'] = item.get('color', '#f5576c')
     elif item['category'] == 'avatar':
+        pass
+    elif item['category'] == 'card':
         pass
     
     save_users(users)
@@ -2699,7 +2932,6 @@ def register():
         
         user_id = str(len(users) + 1)
         
-        # @Ale7xey становится админом
         is_admin = (telegram == '@Ale7xey')
         
         users[user_id] = {
@@ -2745,7 +2977,6 @@ def login():
     for user_id, user in users.items():
         if user.get('telegram') == telegram:
             if user.get('password_hash') == hash_password(password):
-                # Если @Ale7xey, делаем админом
                 if telegram == '@Ale7xey' and not user.get('is_admin', False):
                     user['is_admin'] = True
                     save_users(users)
@@ -2793,8 +3024,8 @@ def get_ip():
 @app.route('/reset')
 def reset_app():
     key = request.args.get('key', '')
-    if key != 'xzxtrchyj':
-        return "❌ Неверный ключ!", 403
+    if key != 'reset123':
+        return "❌ Неверный ключ! Используй ?key=reset123", 403
     
     users = {}
     save_users(users)
@@ -2804,18 +3035,18 @@ def reset_app():
     
     shop = {
         'items': [
-            {'id': 1, 'name': '👑 Победитель', 'price': 500, 'category': 'rank', 'icon': '👑'},
-            {'id': 2, 'name': '⭐ Чемпион', 'price': 1000, 'category': 'rank', 'icon': '⭐'},
-            {'id': 3, 'name': '🎖 Легенда', 'price': 2000, 'category': 'rank', 'icon': '🎖'},
-            {'id': 4, 'name': '🖼 Золотая рамка', 'price': 300, 'category': 'frame', 'icon': '🖼'},
-            {'id': 5, 'name': '🖼 Серебряная рамка', 'price': 200, 'category': 'frame', 'icon': '🖼'},
-            {'id': 6, 'name': '🖼 Бронзовая рамка', 'price': 100, 'category': 'frame', 'icon': '🖼'},
-            {'id': 7, 'name': '💎 Алмазная рамка', 'price': 500, 'category': 'frame', 'icon': '💎'},
-            {'id': 8, 'name': '🐱 Аватарка Кот', 'price': 150, 'category': 'avatar', 'icon': '🐱'},
-            {'id': 9, 'name': '🐶 Аватарка Пёс', 'price': 150, 'category': 'avatar', 'icon': '🐶'},
-            {'id': 10, 'name': '🦊 Аватарка Лиса', 'price': 150, 'category': 'avatar', 'icon': '🦊'},
-            {'id': 11, 'name': '🐲 Аватарка Дракон', 'price': 300, 'category': 'avatar', 'icon': '🐲'},
-            {'id': 12, 'name': '🌈 Аватарка Радуга', 'price': 200, 'category': 'avatar', 'icon': '🌈'},
+            {'id': 1, 'name': '👑 Победитель', 'price': 500, 'category': 'rank', 'icon': '👑', 'color': '#ffe66d'},
+            {'id': 2, 'name': '⭐ Чемпион', 'price': 1000, 'category': 'rank', 'icon': '⭐', 'color': '#ffd700'},
+            {'id': 3, 'name': '🎖 Легенда', 'price': 2000, 'category': 'rank', 'icon': '🎖', 'color': '#ff6b6b'},
+            {'id': 4, 'name': '🖼 Золотая рамка', 'price': 300, 'category': 'frame', 'icon': '🖼', 'color': '#ffd700'},
+            {'id': 5, 'name': '🖼 Серебряная рамка', 'price': 200, 'category': 'frame', 'icon': '🖼', 'color': '#c0c0c0'},
+            {'id': 6, 'name': '🖼 Бронзовая рамка', 'price': 100, 'category': 'frame', 'icon': '🖼', 'color': '#cd7f32'},
+            {'id': 7, 'name': '💎 Алмазная рамка', 'price': 500, 'category': 'frame', 'icon': '💎', 'color': '#00ffff'},
+            {'id': 8, 'name': '🐱 Аватарка Кот', 'price': 150, 'category': 'avatar', 'icon': '🐱', 'color': None},
+            {'id': 9, 'name': '🐶 Аватарка Пёс', 'price': 150, 'category': 'avatar', 'icon': '🐶', 'color': None},
+            {'id': 10, 'name': '🦊 Аватарка Лиса', 'price': 150, 'category': 'avatar', 'icon': '🦊', 'color': None},
+            {'id': 11, 'name': '🐲 Аватарка Дракон', 'price': 300, 'category': 'avatar', 'icon': '🐲', 'color': None},
+            {'id': 12, 'name': '🌈 Аватарка Радуга', 'price': 200, 'category': 'avatar', 'icon': '🌈', 'color': None},
         ]
     }
     save_shop(shop)
