@@ -2793,7 +2793,7 @@ def get_ip():
 @app.route('/reset')
 def reset_app():
     key = request.args.get('key', '')
-    if key != 'чвычскемио':
+    if key != 'xzxtrchyj':
         return "❌ Неверный ключ!", 403
     
     users = {}
