@@ -2134,7 +2134,7 @@ def app_page():
                         const list = document.getElementById('shopItemsList');
                         list.innerHTML = data.items.map(item => `
                             <div style="display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.05);">
-                                <span>${{item.icon}} ${{item.name}} - ${{item.price}} ПТ (${{item.category}})${item.color ? ' Цвет: ' + item.color : ''}</span>
+                                <span>${{item.icon}} ${{item.name}} - ${{item.price}} ПТ (${{item.category}})${{item.color ? ' Цвет: ' + item.color : ''}}</span>
                                 <button onclick="deleteShopItem(${{item.id}})" style="background: rgba(255,0,0,0.2); border: none; color: white; padding: 5px 15px; border-radius: 5px; cursor: pointer;">🗑</button>
                             </div>
                         `).join('');
