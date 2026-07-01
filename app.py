@@ -45,7 +45,7 @@ def load_shop():
             {'id': 4, 'name': '🖼 Золотая рамка', 'price': 300, 'category': 'frame', 'icon': '🖼'},
             {'id': 5, 'name': '🖼 Серебряная рамка', 'price': 200, 'category': 'frame', 'icon': '🖼'},
             {'id': 6, 'name': '🖼 Бронзовая рамка', 'price': 100, 'category': 'frame', 'icon': '🖼'},
-            {'id': 7, 'name': '🖼 Алмазная рамка', 'price': 500, 'category': 'frame', 'icon': '💎'},
+            {'id': 7, 'name': '💎 Алмазная рамка', 'price': 500, 'category': 'frame', 'icon': '💎'},
             {'id': 8, 'name': '🐱 Аватарка Кот', 'price': 150, 'category': 'avatar', 'icon': '🐱'},
             {'id': 9, 'name': '🐶 Аватарка Пёс', 'price': 150, 'category': 'avatar', 'icon': '🐶'},
             {'id': 10, 'name': '🦊 Аватарка Лиса', 'price': 150, 'category': 'avatar', 'icon': '🦊'},
@@ -74,10 +74,431 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-# === ГЛАВНАЯ СТРАНИЦА ===
+# === СТРАНИЦА 1: НАЧАЛЬНАЯ ===
 
 @app.route('/')
 def home():
+    if 'user_id' in session:
+        return redirect_to_app()
+    
+    return '''
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <title>AniCosmo</title>
+        <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body {
+                font-family: 'Segoe UI', Arial, sans-serif;
+                height: 100vh;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                background-image: url('/background');
+                background-size: cover;
+                background-position: center;
+                background-repeat: no-repeat;
+                color: white;
+                overflow: hidden;
+                position: relative;
+            }
+            .overlay {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.55);
+                z-index: 1;
+            }
+            .welcome-screen {
+                position: relative;
+                z-index: 10;
+                text-align: center;
+                padding: 20px;
+                animation: fadeIn 1s ease;
+            }
+            @keyframes fadeIn {
+                from { opacity: 0; transform: scale(0.95); }
+                to { opacity: 1; transform: scale(1); }
+            }
+            .welcome-screen h1 {
+                font-size: 52px;
+                font-weight: 700;
+                letter-spacing: 2px;
+                text-shadow: 0 0 60px rgba(0,0,0,0.8);
+                margin-bottom: 10px;
+                background: linear-gradient(135deg, #f093fb, #f5576c);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+            }
+            .welcome-screen .subtitle {
+                font-size: 20px;
+                opacity: 0.6;
+                letter-spacing: 4px;
+                margin-bottom: 30px;
+            }
+            .welcome-screen .channel-block {
+                margin-bottom: 45px;
+            }
+            .welcome-screen .channel-block .label {
+                font-size: 16px;
+                opacity: 0.5;
+                letter-spacing: 3px;
+                text-transform: uppercase;
+                margin-bottom: 8px;
+            }
+            .welcome-screen .channel-block a {
+                font-size: 26px;
+                color: #ff6b6b;
+                text-decoration: none;
+                font-weight: 600;
+                transition: color 0.3s;
+                text-shadow: 0 0 30px rgba(255, 107, 107, 0.2);
+            }
+            .welcome-screen .channel-block a:hover {
+                color: #ff8a8a;
+            }
+            .btn-start {
+                padding: 16px 60px;
+                font-size: 20px;
+                font-weight: 500;
+                letter-spacing: 3px;
+                color: white;
+                background: rgba(255, 255, 255, 0.08);
+                border: 2px solid rgba(255, 255, 255, 0.25);
+                border-radius: 50px;
+                cursor: pointer;
+                transition: all 0.4s;
+                text-transform: uppercase;
+                backdrop-filter: blur(4px);
+            }
+            .btn-start:hover {
+                background: rgba(255, 255, 255, 0.15);
+                border-color: rgba(255, 255, 255, 0.5);
+                transform: scale(1.03);
+                box-shadow: 0 0 40px rgba(255, 255, 255, 0.05);
+            }
+            .footer {
+                position: fixed;
+                bottom: 30px;
+                left: 0;
+                width: 100%;
+                text-align: center;
+                color: rgba(255,255,255,0.12);
+                font-size: 13px;
+                letter-spacing: 3px;
+                z-index: 1;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="overlay"></div>
+        
+        <div class="welcome-screen">
+            <h1>🌟 AniCosmo</h1>
+            <div class="subtitle">Канал по Аникарду</div>
+            <div class="channel-block">
+                <div class="label">Канал</div>
+                <a href="https://t.me/AniCosmoDay" target="_blank">@AniCosmoDay</a>
+            </div>
+            <button class="btn-start" onclick="window.location.href='/register-page'">Начать</button>
+        </div>
+        
+        <div class="footer">ANICOSMO</div>
+    </body>
+    </html>
+    '''
+
+# === СТРАНИЦА 2: РЕГИСТРАЦИЯ ===
+
+@app.route('/register-page')
+def register_page():
+    if 'user_id' in session:
+        return redirect_to_app()
+    
+    return '''
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Регистрация - AniCosmo</title>
+        <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body {
+                font-family: 'Segoe UI', Arial, sans-serif;
+                height: 100vh;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                background-image: url('/background');
+                background-size: cover;
+                background-position: center;
+                background-repeat: no-repeat;
+                color: white;
+                position: relative;
+            }
+            .overlay {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.65);
+                z-index: 1;
+            }
+            .register-box {
+                position: relative;
+                z-index: 10;
+                background: rgba(0, 0, 0, 0.6);
+                backdrop-filter: blur(20px);
+                padding: 50px;
+                border-radius: 20px;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                max-width: 450px;
+                width: 100%;
+                text-align: center;
+                box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+                animation: fadeIn 0.8s ease;
+            }
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(20px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            .register-box h2 {
+                font-size: 32px;
+                font-weight: 300;
+                letter-spacing: 2px;
+                margin-bottom: 30px;
+                color: white;
+            }
+            .register-box .input-group {
+                margin-bottom: 20px;
+                text-align: left;
+            }
+            .register-box .input-group label {
+                display: block;
+                font-size: 13px;
+                text-transform: uppercase;
+                letter-spacing: 2px;
+                opacity: 0.6;
+                margin-bottom: 8px;
+            }
+            .register-box .input-group input {
+                width: 100%;
+                padding: 14px 18px;
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid rgba(255, 255, 255, 0.15);
+                border-radius: 12px;
+                color: white;
+                font-size: 16px;
+                transition: all 0.3s;
+                outline: none;
+            }
+            .register-box .input-group input:focus {
+                border-color: rgba(255, 107, 107, 0.5);
+                background: rgba(255, 255, 255, 0.08);
+                box-shadow: 0 0 30px rgba(255, 107, 107, 0.05);
+            }
+            .register-box .input-group input::placeholder {
+                color: rgba(255, 255, 255, 0.2);
+            }
+            .register-box .btn-register {
+                width: 100%;
+                padding: 16px;
+                font-size: 18px;
+                font-weight: 500;
+                letter-spacing: 2px;
+                color: white;
+                background: rgba(255, 107, 107, 0.3);
+                border: 1px solid rgba(255, 107, 107, 0.3);
+                border-radius: 12px;
+                cursor: pointer;
+                transition: all 0.4s;
+                text-transform: uppercase;
+                margin-top: 10px;
+            }
+            .register-box .btn-register:hover {
+                background: rgba(255, 107, 107, 0.5);
+                border-color: rgba(255, 107, 107, 0.6);
+                transform: scale(1.02);
+            }
+            .register-box .btn-register:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
+            .btn-back {
+                margin-top: 20px;
+                padding: 10px 30px;
+                font-size: 14px;
+                font-weight: 400;
+                letter-spacing: 2px;
+                color: rgba(255,255,255,0.4);
+                background: transparent;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 50px;
+                cursor: pointer;
+                transition: all 0.4s;
+                text-transform: uppercase;
+            }
+            .btn-back:hover {
+                border-color: rgba(255, 255, 255, 0.3);
+                color: white;
+            }
+            .message {
+                margin-top: 15px;
+                padding: 12px;
+                border-radius: 10px;
+                font-size: 14px;
+                display: none;
+            }
+            .message.error {
+                display: block;
+                background: rgba(255, 0, 0, 0.2);
+                border: 1px solid rgba(255, 0, 0, 0.3);
+                color: #ff6b6b;
+            }
+            .message.success {
+                display: block;
+                background: rgba(0, 255, 0, 0.1);
+                border: 1px solid rgba(0, 255, 0, 0.2);
+                color: #69db7c;
+            }
+            .ip-info {
+                margin-top: 20px;
+                font-size: 12px;
+                opacity: 0.3;
+                letter-spacing: 1px;
+            }
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                25% { transform: translateX(-10px); }
+                75% { transform: translateX(10px); }
+            }
+            .shake {
+                animation: shake 0.5s ease;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="overlay"></div>
+        
+        <div class="register-box">
+            <h2>📝 Регистрация</h2>
+            <form id="registerForm" onsubmit="register(event)">
+                <div class="input-group">
+                    <label>Ваше имя</label>
+                    <input type="text" id="name" placeholder="Алексей" required>
+                </div>
+                <div class="input-group">
+                    <label>Telegram ник</label>
+                    <input type="text" id="telegram" placeholder="@Ale7xey" required>
+                </div>
+                <div class="input-group">
+                    <label>Пароль</label>
+                    <input type="password" id="password" placeholder="••••••••" required minlength="6">
+                </div>
+                <div id="message" class="message"></div>
+                <button type="submit" class="btn-register" id="registerBtn">Зарегистрироваться</button>
+            </form>
+            <button class="btn-back" onclick="window.location.href='/'">← Назад</button>
+            <div class="ip-info" id="ipDisplay">Загрузка IP...</div>
+        </div>
+
+        <script>
+            // Показываем IP
+            fetch('/get_ip')
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('ipDisplay').textContent = 'IP: ' + data.ip;
+                })
+                .catch(() => {
+                    document.getElementById('ipDisplay').textContent = 'IP: Не удалось определить';
+                });
+
+            function register(event) {
+                event.preventDefault();
+
+                const name = document.getElementById('name').value.trim();
+                const telegram = document.getElementById('telegram').value.trim();
+                const password = document.getElementById('password').value;
+                const messageEl = document.getElementById('message');
+                const btn = document.getElementById('registerBtn');
+
+                if (!name || name.length < 2) {
+                    showMessage('Имя должно содержать минимум 2 символа', 'error');
+                    document.getElementById('name').classList.add('shake');
+                    setTimeout(() => document.getElementById('name').classList.remove('shake'), 500);
+                    return;
+                }
+
+                if (!telegram.startsWith('@') || telegram.length < 3) {
+                    showMessage('Telegram ник должен начинаться с @', 'error');
+                    document.getElementById('telegram').classList.add('shake');
+                    setTimeout(() => document.getElementById('telegram').classList.remove('shake'), 500);
+                    return;
+                }
+
+                if (password.length < 6) {
+                    showMessage('Пароль должен быть минимум 6 символов', 'error');
+                    document.getElementById('password').classList.add('shake');
+                    setTimeout(() => document.getElementById('password').classList.remove('shake'), 500);
+                    return;
+                }
+
+                btn.disabled = true;
+                btn.textContent = 'Отправка...';
+
+                fetch('/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ name, telegram, password })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        showMessage('✅ ' + data.message, 'success');
+                        btn.textContent = 'Успешно!';
+                        setTimeout(() => {
+                            window.location.href = '/app';
+                        }, 1500);
+                    } else {
+                        showMessage('❌ ' + data.message, 'error');
+                        btn.disabled = false;
+                        btn.textContent = 'Зарегистрироваться';
+                        document.querySelector('.register-box').classList.add('shake');
+                        setTimeout(() => document.querySelector('.register-box').classList.remove('shake'), 500);
+                    }
+                })
+                .catch(error => {
+                    showMessage('Ошибка соединения с сервером', 'error');
+                    btn.disabled = false;
+                    btn.textContent = 'Зарегистрироваться';
+                });
+            }
+
+            function showMessage(text, type) {
+                const el = document.getElementById('message');
+                el.textContent = text;
+                el.className = 'message ' + type;
+            }
+        </script>
+    </body>
+    </html>
+    '''
+
+# === СТРАНИЦА 3: ОСНОВНОЕ ПРИЛОЖЕНИЕ ===
+
+@app.route('/app')
+def app_page():
+    if 'user_id' not in session:
+        return redirect_to_home()
+    return redirect_to_app()
+
+def redirect_to_app():
     return '''
     <!DOCTYPE html>
     <html>
@@ -812,6 +1233,9 @@ def home():
     </html>
     '''
 
+def redirect_to_home():
+    return '<script>window.location.href="/"</script>'
+
 # === API ENDPOINTS ===
 
 @app.route('/api/user')
@@ -865,7 +1289,6 @@ def api_buy():
     if not user:
         return jsonify({'success': False, 'message': 'Пользователь не найден'})
     
-    # Проверка что не куплено уже
     if 'purchases' in user:
         for p in user['purchases']:
             if p.get('item_id') == item_id:
@@ -885,7 +1308,6 @@ def api_buy():
         'date': datetime.now().isoformat()
     })
     
-    # Применяем эффект товара
     if item['category'] == 'rank':
         user['rank'] = item['name']
     elif item['category'] == 'frame':
@@ -959,7 +1381,6 @@ def admin_add_win():
     wins['wins'].append(win_entry)
     save_wins(wins)
     
-    # Начисляем баллы победителю
     users = load_users()
     for user_id, user in users.items():
         if user['telegram'] == telegram:
@@ -979,7 +1400,6 @@ def admin_delete_win():
     wins = load_wins()
     win_to_delete = next((w for w in wins['wins'] if w['id'] == win_id), None)
     if win_to_delete:
-        # Возвращаем баллы
         users = load_users()
         for user_id, user in users.items():
             if user['telegram'] == win_to_delete['telegram']:
@@ -1013,7 +1433,6 @@ def register():
         users = load_users()
         client_ip = get_client_ip()
         
-        # Проверка IP - только 1 регистрация
         ip_registrations = [u for u in users.values() if u.get('ip') == client_ip]
         if len(ip_registrations) >= 1:
             return jsonify({'success': False, 'message': '⚠️ С этого IP уже зарегистрирован аккаунт!'})
@@ -1045,7 +1464,7 @@ def register():
         return jsonify({
             'success': True,
             'message': f'Добро пожаловать, {name}! Вы получили 100 ПТ бонуса!',
-            'redirect': '/'
+            'redirect': '/app'
         })
         
     except Exception as e:
