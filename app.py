@@ -11,27 +11,11 @@ app.secret_key = 'change-this-to-random-secret-key-12345'
 
 # === ОПРЕДЕЛЕНИЕ ПАПКИ ДЛЯ ДАННЫХ ===
 def get_data_dir():
+    # Всегда используем папку data в корне проекта
     data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
-    try:
-        os.makedirs(data_dir, exist_ok=True)
-        test_file = os.path.join(data_dir, 'test.txt')
-        with open(test_file, 'w') as f:
-            f.write('test')
-        os.remove(test_file)
-        print(f"✅ Используем папку: {data_dir}")
-        return data_dir
-    except Exception as e:
-        print(f"❌ Нет прав на запись в {data_dir}: {e}")
-        data_dir = '/tmp/anicospo_data'
-        try:
-            os.makedirs(data_dir, exist_ok=True)
-            print(f"✅ Используем папку: {data_dir}")
-            return data_dir
-        except Exception as e2:
-            print(f"❌ Нет прав на запись в /tmp/: {e2}")
-            data_dir = os.path.dirname(os.path.abspath(__file__))
-            print(f"⚠️ Используем папку: {data_dir}")
-            return data_dir
+    os.makedirs(data_dir, exist_ok=True)
+    print(f"✅ Используем папку: {data_dir}")
+    return data_dir
 
 DATA_DIR = get_data_dir()
 
