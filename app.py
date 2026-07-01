@@ -605,7 +605,7 @@ def main_page():
                     <div class="label">Канал</div>
                     <a href="https://t.me/AniCosmoDay" target="_blank">@AniCosmoDay</a>
                 </div>
-                <button class="btn" onclick="goForward()">Начать</button>
+                <button class="btn" id="startBtn">Начать</button>
             </div>
             <div id="screen-content">
                 <div style="text-align:center; margin-bottom:30px;">
@@ -1410,6 +1410,17 @@ def main_page():
                 if (e.key === 'Escape') {
                     document.querySelectorAll('.modal.active').forEach(function(m) { 
                         if (m) m.classList.remove('active'); 
+                    });
+                }
+            });
+
+            // Обработчик для кнопки "Начать"
+            document.addEventListener('DOMContentLoaded', function() {
+                var startBtn = document.getElementById('startBtn');
+                if (startBtn) {
+                    startBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        goForward();
                     });
                 }
             });
