@@ -1,4 +1,4 @@
-from flask import Flask, send_file, request, jsonify, session
+from flask import Flask, send_file, request, jsonify, session, redirect
 import os
 import json
 from datetime import datetime
@@ -1460,11 +1460,6 @@ def logout():
     session.clear()
     return redirect('/')
 
-def redirect(url):
-    return '<meta http-equiv="refresh" content="0;url=' + url + '"><script>window.location.href="' + url + '"</script>'
-
-# === API ===
-
 @app.route('/api/profile')
 def api_profile():
     if 'username' not in session:
@@ -1676,4 +1671,4 @@ def background():
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=port, debug=True)
