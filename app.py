@@ -2322,7 +2322,7 @@ def register():
             'telegram': telegram,
             'password_hash': hash_password(password),
             'ip': client_ip,
-            'points': 100,
+            'points': 0,
             'registered_at': datetime.now().isoformat(),
             'last_login': datetime.now().isoformat(),
             'purchases': [],
@@ -2339,7 +2339,6 @@ def register():
         
         return jsonify({
             'success': True,
-            'message': f'Добро пожаловать, {name}! Вы получили 100 ПТ бонуса!',
             'redirect': '/app'
         })
         
