@@ -4,46 +4,144 @@ import json
 import hashlib
 from datetime import datetime
 from functools import wraps
+import sys
 
 app = Flask(__name__)
 app.secret_key = 'change-this-to-random-secret-key-12345'
 
-# Файлы для хранения данных
-USERS_FILE = 'users.json'
-WINS_FILE = 'wins.json'
-SHOP_FILE = 'shop.json'
-ADMIN_CODE_FILE = 'admin_code.txt'
+# === ОПРЕДЕЛЕНИЕ ПАПКИ ДЛЯ ДАННЫХ ===
+def get_data_dir():
+    # Пробуем создать папку в текущей директории
+    data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
+    try:
+        os.makedirs(data_dir, exist_ok=True)
+        # Проверяем права на запись
+        test_file = os.path.join(data_dir, 'test.txt')
+        with open(test_file, 'w') as f:
+            f.write('test')
+        os.remove(test_file)
+        print(f"✅ Используем папку: {data_dir}")
+        return data_dir
+    except Exception as e:
+        print(f"❌ Нет прав на запись в {data_dir}: {e}")
+        # Пробуем /tmp/
+        data_dir = '/tmp/anicospo_data'
+        try:
+            os.makedirs(data_dir, exist_ok=True)
+            print(f"✅ Используем папку: {data_dir}")
+            return data_dir
+        except Exception as e2:
+            print(f"❌ Нет прав на запись в /tmp/: {e2}")
+            # Последняя попытка - использовать текущую папку
+            data_dir = os.path.dirname(os.path.abspath(__file__))
+            print(f"⚠️ Используем папку: {data_dir}")
+            return data_dir
+
+DATA_DIR = get_data_dir()
+
+# === ФУНКЦИЯ ДЛЯ ПОЛУЧЕНИЯ ПУТИ К ФАЙЛУ ===
+def get_file_path(filename):
+    return os.path.join(DATA_DIR, filename)
+
+# === ИНИЦИАЛИЗАЦИЯ ФАЙЛОВ ===
+def init_files():
+    files = {
+        'users.json': {},
+        'wins.json': {'wins': [], 'last_id': 0},
+        'shop.json': {
+            'items': [
+                {'id': 1, 'name': '👑 Победитель', 'price': 500, 'category': 'rank', 'icon': '👑'},
+                {'id': 2, 'name': '⭐ Чемпион', 'price': 1000, 'category': 'rank', 'icon': '⭐'},
+                {'id': 3, 'name': '🎖 Легенда', 'price': 2000, 'category': 'rank', 'icon': '🎖'},
+                {'id': 4, 'name': '🖼 Золотая рамка', 'price': 300, 'category': 'frame', 'icon': '🖼'},
+                {'id': 5, 'name': '🖼 Серебряная рамка', 'price': 200, 'category': 'frame', 'icon': '🖼'},
+                {'id': 6, 'name': '🖼 Бронзовая рамка', 'price': 100, 'category': 'frame', 'icon': '🖼'},
+                {'id': 7, 'name': '💎 Алмазная рамка', 'price': 500, 'category': 'frame', 'icon': '💎'},
+                {'id': 8, 'name': '🐱 Аватарка Кот', 'price': 150, 'category': 'avatar', 'icon': '🐱'},
+                {'id': 9, 'name': '🐶 Аватарка Пёс', 'price': 150, 'category': 'avatar', 'icon': '🐶'},
+                {'id': 10, 'name': '🦊 Аватарка Лиса', 'price': 150, 'category': 'avatar', 'icon': '🦊'},
+                {'id': 11, 'name': '🐲 Аватарка Дракон', 'price': 300, 'category': 'avatar', 'icon': '🐲'},
+                {'id': 12, 'name': '🌈 Аватарка Радуга', 'price': 200, 'category': 'avatar', 'icon': '🌈'},
+            ]
+        },
+        'admin_code.txt': '132547'
+    }
+    
+    for filename, default_content in files.items():
+        filepath = get_file_path(filename)
+        if not os.path.exists(filepath):
+            try:
+                with open(filepath, 'w', encoding='utf-8') as f:
+                    if isinstance(default_content, (dict, list)):
+                        json.dump(default_content, f, ensure_ascii=False, indent=2)
+                    else:
+                        f.write(str(default_content))
+                print(f"✅ Создан файл: {filename}")
+            except Exception as e:
+                print(f"❌ Не удалось создать {filename}: {e}")
+
+# Инициализируем файлы при запуске
+init_files()
+
+# === ОСТАЛЬНЫЕ ФУНКЦИИ ===
 
 def get_admin_code():
-    if os.path.exists(ADMIN_CODE_FILE):
-        with open(ADMIN_CODE_FILE, 'r') as f:
-            return f.read().strip()
+    try:
+        filepath = get_file_path('admin_code.txt')
+        if os.path.exists(filepath):
+            with open(filepath, 'r', encoding='utf-8') as f:
+                return f.read().strip()
+    except:
+        pass
     return '132547'
 
 def load_users():
-    if os.path.exists(USERS_FILE):
-        with open(USERS_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
+    try:
+        filepath = get_file_path('users.json')
+        if os.path.exists(filepath):
+            with open(filepath, 'r', encoding='utf-8') as f:
+                return json.load(f)
+    except Exception as e:
+        print(f"Ошибка загрузки users.json: {e}")
     return {}
 
 def save_users(users):
-    with open(USERS_FILE, 'w', encoding='utf-8') as f:
-        json.dump(users, f, ensure_ascii=False, indent=2)
+    try:
+        filepath = get_file_path('users.json')
+        with open(filepath, 'w', encoding='utf-8') as f:
+            json.dump(users, f, ensure_ascii=False, indent=2)
+        return True
+    except Exception as e:
+        print(f"Ошибка сохранения users.json: {e}")
+        return False
 
 def load_wins():
-    if os.path.exists(WINS_FILE):
-        with open(WINS_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
+    try:
+        filepath = get_file_path('wins.json')
+        if os.path.exists(filepath):
+            with open(filepath, 'r', encoding='utf-8') as f:
+                return json.load(f)
+    except:
+        pass
     return {'wins': [], 'last_id': 0}
 
 def save_wins(wins_data):
-    with open(WINS_FILE, 'w', encoding='utf-8') as f:
-        json.dump(wins_data, f, ensure_ascii=False, indent=2)
+    try:
+        filepath = get_file_path('wins.json')
+        with open(filepath, 'w', encoding='utf-8') as f:
+            json.dump(wins_data, f, ensure_ascii=False, indent=2)
+        return True
+    except:
+        return False
 
 def load_shop():
-    if os.path.exists(SHOP_FILE):
-        with open(SHOP_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
+    try:
+        filepath = get_file_path('shop.json')
+        if os.path.exists(filepath):
+            with open(filepath, 'r', encoding='utf-8') as f:
+                return json.load(f)
+    except:
+        pass
     return {
         'items': [
             {'id': 1, 'name': '👑 Победитель', 'price': 500, 'category': 'rank', 'icon': '👑'},
@@ -62,8 +160,13 @@ def load_shop():
     }
 
 def save_shop(shop_data):
-    with open(SHOP_FILE, 'w', encoding='utf-8') as f:
-        json.dump(shop_data, f, ensure_ascii=False, indent=2)
+    try:
+        filepath = get_file_path('shop.json')
+        with open(filepath, 'w', encoding='utf-8') as f:
+            json.dump(shop_data, f, ensure_ascii=False, indent=2)
+        return True
+    except:
+        return False
 
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
@@ -778,13 +881,15 @@ def login_page():
     </html>
     '''
 
-# === СТРАНИЦА 4: ОСНОВНОЕ ПРИЛОЖЕНИЕ ===
+# === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===
 
 def redirect_to_app():
     return '<script>window.location.href="/app"</script>'
 
 def redirect_to_home():
     return '<script>window.location.href="/"</script>'
+
+# === СТРАНИЦА 4: ОСНОВНОЕ ПРИЛОЖЕНИЕ ===
 
 @app.route('/app')
 def app_page():
@@ -2039,7 +2144,7 @@ def admin_change_code():
     if len(new_code) < 4:
         return jsonify({'success': False, 'message': 'Новый код должен быть минимум 4 символа'})
     
-    with open(ADMIN_CODE_FILE, 'w') as f:
+    with open(get_file_path('admin_code.txt'), 'w') as f:
         f.write(new_code)
     
     return jsonify({'success': True, 'message': 'Код успешно изменен!'})
@@ -2244,7 +2349,7 @@ def register():
         })
         
     except Exception as e:
-        print(f"Ошибка: {e}")
+        print(f"Ошибка регистрации: {e}")
         return jsonify({'success': False, 'message': 'Ошибка на сервере'})
 
 @app.route('/login', methods=['POST'])
@@ -2298,4 +2403,4 @@ def get_ip():
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=True)
+    app.run(host='0.0.0.0', port=port, debug=False)
