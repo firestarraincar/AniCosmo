@@ -1,38 +1,77 @@
-from flask import Flask, send_file, request, jsonify, session
+from flask import Flask, send_file, request, jsonify, session, render_template_string
 import os
 import json
 import hashlib
-import re
+import random
 from datetime import datetime
+from functools import wraps
 
 app = Flask(__name__)
-app.secret_key = 'your-secret-key-here-change-in-production'  # Обязательно изменить!
+app.secret_key = 'change-this-to-random-secret-key-12345'
 
-# Файл для хранения пользователей
+# Файлы для хранения данных
 USERS_FILE = 'users.json'
+WINS_FILE = 'wins.json'
+SHOP_FILE = 'shop.json'
 
-# Функция для загрузки пользователей
+# === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===
+
 def load_users():
     if os.path.exists(USERS_FILE):
         with open(USERS_FILE, 'r', encoding='utf-8') as f:
             return json.load(f)
     return {}
 
-# Функция для сохранения пользователей
 def save_users(users):
     with open(USERS_FILE, 'w', encoding='utf-8') as f:
         json.dump(users, f, ensure_ascii=False, indent=2)
 
-# Хеширование пароля
+def load_wins():
+    if os.path.exists(WINS_FILE):
+        with open(WINS_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    return {'wins': [], 'last_id': 0}
+
+def save_wins(wins_data):
+    with open(WINS_FILE, 'w', encoding='utf-8') as f:
+        json.dump(wins_data, f, ensure_ascii=False, indent=2)
+
+def load_shop():
+    if os.path.exists(SHOP_FILE):
+        with open(SHOP_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    # Товары по умолчанию
+    return {
+        'items': [
+            {'id': 1, 'name': '⭐ Премиум роль', 'price': 1000, 'icon': '👑'},
+            {'id': 2, 'name': '🎨 Уникальный никнейм', 'price': 500, 'icon': '✨'},
+            {'id': 3, 'name': '📢 Реклама в канале', 'price': 2000, 'icon': '📣'},
+            {'id': 4, 'name': '🎮 Доступ к бете', 'price': 1500, 'icon': '🎯'},
+            {'id': 5, 'name': '🖼 Кастомная рамка', 'price': 300, 'icon': '🖼'}
+        ]
+    }
+
+def save_shop(shop_data):
+    with open(SHOP_FILE, 'w', encoding='utf-8') as f:
+        json.dump(shop_data, f, ensure_ascii=False, indent=2)
+
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
-# Проверка IP (защита от множественных регистраций)
 def get_client_ip():
-    # Для реального IP через прокси
     if request.headers.get('X-Forwarded-For'):
         return request.headers.get('X-Forwarded-For').split(',')[0]
     return request.remote_addr
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            return jsonify({'success': False, 'message': 'Требуется авторизация'}), 401
+        return f(*args, **kwargs)
+    return decorated_function
+
+# === ГЛАВНАЯ СТРАНИЦА ===
 
 @app.route('/')
 def home():
@@ -43,439 +82,447 @@ def home():
         <meta charset="UTF-8">
         <title>AniCosmo</title>
         <style>
-            * {
-                margin: 0;
-                padding: 0;
-                box-sizing: border-box;
-            }
-
+            * { margin: 0; padding: 0; box-sizing: border-box; }
             body {
                 font-family: 'Segoe UI', Arial, sans-serif;
-                height: 100vh;
+                min-height: 100vh;
+                background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+                color: white;
                 display: flex;
                 justify-content: center;
                 align-items: center;
-                background-image: url('/background');
-                background-size: cover;
-                background-position: center;
-                background-repeat: no-repeat;
-                color: white;
-                overflow: hidden;
-                position: relative;
-            }
-
-            .overlay {
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0, 0, 0, 0.55);
-                z-index: 1;
-            }
-
-            /* === ЭКРАН 1: Главный === */
-            #screen-main {
-                position: relative;
-                z-index: 10;
-                text-align: center;
-                transition: opacity 0.8s, transform 0.8s;
                 padding: 20px;
             }
-
-            #screen-main h1 {
-                font-size: 52px;
-                font-weight: 700;
-                letter-spacing: 2px;
-                text-shadow: 0 0 60px rgba(0,0,0,0.8);
-                margin-bottom: 25px;
-            }
-
-            #screen-main .channel-block {
-                margin-bottom: 45px;
-            }
-
-            #screen-main .channel-block .label {
-                font-size: 18px;
-                opacity: 0.6;
-                letter-spacing: 4px;
-                text-transform: uppercase;
-                margin-bottom: 8px;
-            }
-
-            #screen-main .channel-block a {
-                font-size: 28px;
-                color: #ff6b6b;
-                text-decoration: none;
-                font-weight: 600;
-                transition: color 0.3s;
-                text-shadow: 0 0 30px rgba(255, 107, 107, 0.2);
-            }
-
-            #screen-main .channel-block a:hover {
-                color: #ff8a8a;
-            }
-
-            #screen-main .btn-start {
-                padding: 16px 60px;
-                font-size: 20px;
-                font-weight: 500;
-                letter-spacing: 3px;
-                color: white;
-                background: rgba(255, 255, 255, 0.08);
-                border: 2px solid rgba(255, 255, 255, 0.25);
-                border-radius: 50px;
-                cursor: pointer;
-                transition: all 0.4s;
-                text-transform: uppercase;
-                backdrop-filter: blur(4px);
-            }
-
-            #screen-main .btn-start:hover {
-                background: rgba(255, 255, 255, 0.15);
-                border-color: rgba(255, 255, 255, 0.5);
-                transform: scale(1.03);
-                box-shadow: 0 0 40px rgba(255, 255, 255, 0.05);
-            }
-
-            /* === ЭКРАН 2: Регистрация === */
-            #screen-register {
-                position: absolute;
-                top: 0;
-                left: 0;
+            .container {
+                max-width: 1200px;
                 width: 100%;
-                height: 100%;
+            }
+            .header {
+                text-align: center;
+                margin-bottom: 40px;
+            }
+            .header h1 {
+                font-size: 48px;
+                font-weight: 700;
+                background: linear-gradient(135deg, #f093fb, #f5576c);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                margin-bottom: 10px;
+            }
+            .header .subtitle {
+                opacity: 0.6;
+                font-size: 18px;
+                letter-spacing: 2px;
+            }
+            .main-menu {
                 display: flex;
                 justify-content: center;
-                align-items: center;
-                opacity: 0;
-                pointer-events: none;
-                transition: opacity 0.8s;
-                padding: 40px;
-                z-index: 10;
+                gap: 20px;
+                flex-wrap: wrap;
+                margin-bottom: 40px;
             }
-
-            #screen-register.active {
-                opacity: 1;
-                pointer-events: auto;
-            }
-
-            .register-box {
-                background: rgba(0, 0, 0, 0.6);
-                backdrop-filter: blur(20px);
-                padding: 50px;
-                border-radius: 20px;
-                border: 1px solid rgba(255, 255, 255, 0.1);
-                max-width: 450px;
-                width: 100%;
-                text-align: center;
-                box-shadow: 0 30px 60px rgba(0,0,0,0.5);
-            }
-
-            .register-box h2 {
-                font-size: 32px;
-                font-weight: 300;
-                letter-spacing: 2px;
-                margin-bottom: 30px;
-                color: white;
-            }
-
-            .register-box .input-group {
-                margin-bottom: 20px;
-                text-align: left;
-            }
-
-            .register-box .input-group label {
-                display: block;
-                font-size: 13px;
-                text-transform: uppercase;
-                letter-spacing: 2px;
-                opacity: 0.6;
-                margin-bottom: 8px;
-            }
-
-            .register-box .input-group input {
-                width: 100%;
-                padding: 14px 18px;
-                background: rgba(255, 255, 255, 0.05);
-                border: 1px solid rgba(255, 255, 255, 0.15);
-                border-radius: 12px;
-                color: white;
-                font-size: 16px;
-                transition: all 0.3s;
-                outline: none;
-            }
-
-            .register-box .input-group input:focus {
-                border-color: rgba(255, 107, 107, 0.5);
-                background: rgba(255, 255, 255, 0.08);
-                box-shadow: 0 0 30px rgba(255, 107, 107, 0.05);
-            }
-
-            .register-box .input-group input::placeholder {
-                color: rgba(255, 255, 255, 0.2);
-            }
-
-            .register-box .btn-register {
-                width: 100%;
-                padding: 16px;
+            .main-menu button {
+                padding: 15px 40px;
                 font-size: 18px;
-                font-weight: 500;
-                letter-spacing: 2px;
-                color: white;
-                background: rgba(255, 107, 107, 0.3);
-                border: 1px solid rgba(255, 107, 107, 0.3);
-                border-radius: 12px;
-                cursor: pointer;
-                transition: all 0.4s;
-                text-transform: uppercase;
-                margin-top: 10px;
-            }
-
-            .register-box .btn-register:hover {
-                background: rgba(255, 107, 107, 0.5);
-                border-color: rgba(255, 107, 107, 0.6);
-                transform: scale(1.02);
-            }
-
-            .register-box .btn-register:disabled {
-                opacity: 0.5;
-                cursor: not-allowed;
-            }
-
-            .btn-back {
-                margin-top: 20px;
-                padding: 10px 30px;
-                font-size: 14px;
-                font-weight: 400;
-                letter-spacing: 2px;
-                color: rgba(255,255,255,0.4);
-                background: transparent;
-                border: 1px solid rgba(255, 255, 255, 0.1);
+                border: 2px solid rgba(255,255,255,0.1);
                 border-radius: 50px;
-                cursor: pointer;
-                transition: all 0.4s;
-                text-transform: uppercase;
-            }
-
-            .btn-back:hover {
-                border-color: rgba(255, 255, 255, 0.3);
+                background: rgba(255,255,255,0.05);
                 color: white;
-            }
-
-            .message {
-                margin-top: 15px;
-                padding: 12px;
-                border-radius: 10px;
-                font-size: 14px;
-                display: none;
-            }
-
-            .message.error {
-                display: block;
-                background: rgba(255, 0, 0, 0.2);
-                border: 1px solid rgba(255, 0, 0, 0.3);
-                color: #ff6b6b;
-            }
-
-            .message.success {
-                display: block;
-                background: rgba(0, 255, 0, 0.1);
-                border: 1px solid rgba(0, 255, 0, 0.2);
-                color: #69db7c;
-            }
-
-            .footer {
-                position: fixed;
-                bottom: 30px;
-                left: 0;
-                width: 100%;
-                text-align: center;
-                color: rgba(255,255,255,0.12);
-                font-size: 13px;
-                letter-spacing: 3px;
-                z-index: 1;
-            }
-
-            .ip-info {
-                margin-top: 20px;
-                font-size: 12px;
-                opacity: 0.3;
+                cursor: pointer;
+                transition: all 0.3s;
+                backdrop-filter: blur(10px);
+                font-weight: 500;
                 letter-spacing: 1px;
             }
-
-            /* Анимация для предупреждения */
-            @keyframes shake {
-                0%, 100% { transform: translateX(0); }
-                25% { transform: translateX(-10px); }
-                75% { transform: translateX(10px); }
+            .main-menu button:hover {
+                background: rgba(255,255,255,0.1);
+                border-color: #f5576c;
+                transform: translateY(-2px);
+                box-shadow: 0 10px 30px rgba(245, 87, 108, 0.2);
             }
-            .shake {
-                animation: shake 0.5s ease;
+            .main-menu button.active {
+                background: rgba(245, 87, 108, 0.2);
+                border-color: #f5576c;
+            }
+            .content {
+                background: rgba(255,255,255,0.05);
+                backdrop-filter: blur(20px);
+                border-radius: 20px;
+                padding: 30px;
+                border: 1px solid rgba(255,255,255,0.05);
+                min-height: 400px;
+                display: none;
+            }
+            .content.active {
+                display: block;
+            }
+            .footer {
+                text-align: center;
+                margin-top: 40px;
+                opacity: 0.3;
+                font-size: 13px;
+                letter-spacing: 3px;
+            }
+            .btn-logout {
+                padding: 8px 20px;
+                background: rgba(255,107,107,0.2);
+                border: 1px solid rgba(255,107,107,0.2);
+                border-radius: 50px;
+                color: white;
+                cursor: pointer;
+                font-size: 14px;
+                transition: all 0.3s;
+                margin-left: 20px;
+            }
+            .btn-logout:hover {
+                background: rgba(255,107,107,0.3);
+            }
+            .user-info {
+                display: inline-flex;
+                align-items: center;
+                gap: 15px;
             }
         </style>
     </head>
     <body>
-
-        <div class="overlay"></div>
-
-        <!-- ЭКРАН 1: Главный -->
-        <div id="screen-main">
-            <h1>AniCosmo — канал по Аникарду</h1>
-            <div class="channel-block">
-                <div class="label">Канал</div>
-                <a href="https://t.me/AniCosmoDay" target="_blank">@AniCosmoDay</a>
+        <div class="container">
+            <div class="header">
+                <h1>🌟 AniCosmo</h1>
+                <div class="subtitle">Канал по Аникарду</div>
+                <div style="margin-top: 15px;">
+                    <a href="https://t.me/AniCosmoDay" target="_blank" style="color: #f5576c; text-decoration: none; font-size: 18px;">@AniCosmoDay</a>
+                    <button class="btn-logout" onclick="logout()">Выйти</button>
+                </div>
             </div>
-            <button class="btn-start" onclick="goToRegister()">Начать</button>
-        </div>
 
-        <!-- ЭКРАН 2: Регистрация -->
-        <div id="screen-register">
-            <div class="register-box">
-                <h2>📝 Регистрация</h2>
-                <form id="registerForm" onsubmit="register(event)">
-                    <div class="input-group">
-                        <label>Ваше имя</label>
-                        <input type="text" id="name" placeholder="Алексей" required>
-                    </div>
-                    <div class="input-group">
-                        <label>Telegram ник</label>
-                        <input type="text" id="telegram" placeholder="@Ale7xey" required>
-                    </div>
-                    <div class="input-group">
-                        <label>Пароль</label>
-                        <input type="password" id="password" placeholder="••••••••" required minlength="6">
-                    </div>
-                    <div id="message" class="message"></div>
-                    <button type="submit" class="btn-register" id="registerBtn">Зарегистрироваться</button>
-                </form>
-                <button class="btn-back" onclick="goBack()">← Назад</button>
-                <div class="ip-info" id="ipDisplay">Загрузка IP...</div>
+            <div class="main-menu">
+                <button onclick="showSection('profile')" class="active" id="btn-profile">👤 Профиль</button>
+                <button onclick="showSection('shop')" id="btn-shop">🛒 Магазин</button>
+                <button onclick="showSection('wins')" id="btn-wins">🎰 Розыгрыши</button>
             </div>
-        </div>
 
-        <div class="footer">ANICOSMO</div>
+            <div id="profile-section" class="content active"></div>
+            <div id="shop-section" class="content"></div>
+            <div id="wins-section" class="content"></div>
+
+            <div class="footer">ANICOSMO</div>
+        </div>
 
         <script>
-            // Переход на регистрацию
-            function goToRegister() {
-                const main = document.getElementById('screen-main');
-                main.style.opacity = '0';
-                main.style.transform = 'scale(0.95)';
+            let currentUser = null;
 
-                setTimeout(() => {
-                    main.style.display = 'none';
-                    document.getElementById('screen-register').classList.add('active');
-                    // Показываем IP
-                    fetch('/get_ip')
-                        .then(res => res.json())
-                        .then(data => {
-                            document.getElementById('ipDisplay').textContent = 'IP: ' + data.ip;
-                        })
-                        .catch(() => {
-                            document.getElementById('ipDisplay').textContent = 'IP: Не удалось определить';
-                        });
-                }, 800);
+            // Загрузка данных пользователя
+            function loadUserData() {
+                fetch('/api/user')
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            currentUser = data.user;
+                            renderProfile();
+                            renderShop();
+                            renderWins();
+                        }
+                    });
             }
 
-            // Назад на главный экран
-            function goBack() {
-                const main = document.getElementById('screen-main');
-                const register = document.getElementById('screen-register');
+            // Показ раздела
+            function showSection(section) {
+                document.querySelectorAll('.content').forEach(el => el.classList.remove('active'));
+                document.querySelectorAll('.main-menu button').forEach(el => el.classList.remove('active'));
+                
+                document.getElementById(section + '-section').classList.add('active');
+                document.getElementById('btn-' + section).classList.add('active');
 
-                register.classList.remove('active');
-
-                setTimeout(() => {
-                    main.style.display = 'block';
-                    setTimeout(() => {
-                        main.style.opacity = '1';
-                        main.style.transform = 'scale(1)';
-                    }, 50);
-                }, 400);
+                if (section === 'profile') renderProfile();
+                if (section === 'shop') renderShop();
+                if (section === 'wins') renderWins();
             }
 
-            // Регистрация
-            function register(event) {
-                event.preventDefault();
+            // === ПРОФИЛЬ ===
+            function renderProfile() {
+                if (!currentUser) return;
+                const section = document.getElementById('profile-section');
+                section.innerHTML = `
+                    <div style="text-align: center;">
+                        <div style="font-size: 60px; margin-bottom: 10px;">👤</div>
+                        <h2 style="font-size: 32px; margin-bottom: 5px;">${currentUser.name}</h2>
+                        <p style="opacity: 0.6; margin-bottom: 20px;">${currentUser.telegram}</p>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px; max-width: 600px; margin: 0 auto;">
+                            <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px;">
+                                <div style="font-size: 28px; font-weight: bold; color: #f5576c;">${currentUser.points || 0}</div>
+                                <div style="opacity: 0.5; font-size: 14px;">PT Баллов</div>
+                            </div>
+                            <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px;">
+                                <div style="font-size: 28px; font-weight: bold; color: #4ecdc4;">${currentUser.wins_count || 0}</div>
+                                <div style="opacity: 0.5; font-size: 14px;">Побед</div>
+                            </div>
+                            <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px;">
+                                <div style="font-size: 28px; font-weight: bold; color: #ffe66d;">${currentUser.telegram}</div>
+                                <div style="opacity: 0.5; font-size: 14px;">Telegram</div>
+                            </div>
+                        </div>
+                        <div style="margin-top: 30px; opacity: 0.3; font-size: 12px;">
+                            IP: ${currentUser.ip} • Зарегистрирован: ${new Date(currentUser.registered_at).toLocaleDateString()}
+                        </div>
+                    </div>
+                `;
+            }
 
-                const name = document.getElementById('name').value.trim();
-                const telegram = document.getElementById('telegram').value.trim();
-                const password = document.getElementById('password').value;
-                const messageEl = document.getElementById('message');
-                const btn = document.getElementById('registerBtn');
+            // === МАГАЗИН ===
+            function renderShop() {
+                const section = document.getElementById('shop-section');
+                fetch('/api/shop')
+                    .then(res => res.json())
+                    .then(data => {
+                        let itemsHtml = data.items.map(item => `
+                            <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px; text-align: center;">
+                                <div style="font-size: 40px;">${item.icon}</div>
+                                <h3 style="margin: 10px 0;">${item.name}</h3>
+                                <p style="color: #f5576c; font-weight: bold;">${item.price} PT</p>
+                                <button onclick="buyItem(${item.id})" style="margin-top: 10px; padding: 10px 30px; background: rgba(245,87,108,0.3); border: 1px solid rgba(245,87,108,0.3); border-radius: 50px; color: white; cursor: pointer; transition: all 0.3s;">
+                                    Купить
+                                </button>
+                            </div>
+                        `).join('');
 
-                // Простая валидация
-                if (!name || name.length < 2) {
-                    showMessage('Имя должно содержать минимум 2 символа', 'error');
-                    document.getElementById('name').classList.add('shake');
-                    setTimeout(() => document.getElementById('name').classList.remove('shake'), 500);
-                    return;
-                }
+                        section.innerHTML = `
+                            <h2 style="margin-bottom: 20px;">🛒 Магазин</h2>
+                            <p style="opacity: 0.6; margin-bottom: 20px;">Ваши баллы: <strong style="color: #f5576c;">${currentUser ? currentUser.points || 0 : 0} PT</strong></p>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                                ${itemsHtml}
+                            </div>
+                        `;
+                    });
+            }
 
-                if (!telegram.startsWith('@') || telegram.length < 3) {
-                    showMessage('Telegram ник должен начинаться с @', 'error');
-                    document.getElementById('telegram').classList.add('shake');
-                    setTimeout(() => document.getElementById('telegram').classList.remove('shake'), 500);
-                    return;
-                }
-
-                if (password.length < 6) {
-                    showMessage('Пароль должен быть минимум 6 символов', 'error');
-                    document.getElementById('password').classList.add('shake');
-                    setTimeout(() => document.getElementById('password').classList.remove('shake'), 500);
-                    return;
-                }
-
-                // Отправка на сервер
-                btn.disabled = true;
-                btn.textContent = 'Отправка...';
-
-                fetch('/register', {
+            function buyItem(itemId) {
+                fetch('/api/buy', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ name, telegram, password })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ item_id: itemId })
                 })
                 .then(res => res.json())
                 .then(data => {
                     if (data.success) {
-                        showMessage('✅ ' + data.message, 'success');
-                        btn.textContent = 'Успешно!';
-                        // Перенаправление через 2 секунды
-                        setTimeout(() => {
-                            window.location.href = data.redirect || '/dashboard';
-                        }, 2000);
+                        alert('✅ ' + data.message);
+                        loadUserData();
+                        renderShop();
                     } else {
-                        showMessage('❌ ' + data.message, 'error');
-                        btn.disabled = false;
-                        btn.textContent = 'Зарегистрироваться';
-                        // Встряхиваем всю форму при ошибке
-                        document.querySelector('.register-box').classList.add('shake');
-                        setTimeout(() => document.querySelector('.register-box').classList.remove('shake'), 500);
+                        alert('❌ ' + data.message);
                     }
-                })
-                .catch(error => {
-                    showMessage('Ошибка соединения с сервером', 'error');
-                    btn.disabled = false;
-                    btn.textContent = 'Зарегистрироваться';
                 });
             }
 
-            function showMessage(text, type) {
-                const el = document.getElementById('message');
-                el.textContent = text;
-                el.className = 'message ' + type;
-            }
-        </script>
+            // === РОЗЫГРЫШИ ===
+            function renderWins() {
+                const section = document.getElementById('wins-section');
+                fetch('/api/wins')
+                    .then(res => res.json())
+                    .then(data => {
+                        const recentWins = data.wins.slice(-10).reverse();
+                        const topWins = [...data.wins].sort((a, b) => b.amount - a.amount).slice(0, 10);
 
+                        section.innerHTML = `
+                            <h2 style="margin-bottom: 20px;">🎰 Розыгрыши</h2>
+                            
+                            <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px; margin-bottom: 30px;">
+                                <h3 style="margin-bottom: 15px;">➕ Добавить результат</h3>
+                                <form onsubmit="addWin(event)" style="display: flex; flex-wrap: wrap; gap: 15px; align-items: end;">
+                                    <div style="flex: 1; min-width: 150px;">
+                                        <label style="display: block; font-size: 12px; opacity: 0.5; margin-bottom: 5px;">Telegram ник</label>
+                                        <input type="text" id="win-telegram" placeholder="@username" style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: white; outline: none;">
+                                    </div>
+                                    <div style="flex: 1; min-width: 150px;">
+                                        <label style="display: block; font-size: 12px; opacity: 0.5; margin-bottom: 5px;">Что выиграл</label>
+                                        <input type="text" id="win-prize" placeholder="Например: 1000 PT" style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: white; outline: none;">
+                                    </div>
+                                    <div style="flex: 1; min-width: 150px;">
+                                        <label style="display: block; font-size: 12px; opacity: 0.5; margin-bottom: 5px;">Сумма в PT</label>
+                                        <input type="number" id="win-amount" placeholder="0" style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: white; outline: none;">
+                                    </div>
+                                    <button type="submit" style="padding: 12px 30px; background: rgba(245,87,108,0.3); border: 1px solid rgba(245,87,108,0.3); border-radius: 10px; color: white; cursor: pointer; transition: all 0.3s;">
+                                        Добавить
+                                    </button>
+                                </form>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+                                <div>
+                                    <h3 style="margin-bottom: 15px;">📋 Недавние выигрыши</h3>
+                                    <div style="max-height: 300px; overflow-y: auto;">
+                                        ${recentWins.length === 0 ? '<p style="opacity: 0.3;">Пока нет выигрышей</p>' : recentWins.map(win => `
+                                            <div style="display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                                <span><strong style="color: #4ecdc4;">${win.telegram}</strong> - ${win.prize}</span>
+                                                <span style="color: #f5576c;">+${win.amount} PT</span>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3 style="margin-bottom: 15px;">🏆 Топ по сумме PT</h3>
+                                    <div style="max-height: 300px; overflow-y: auto;">
+                                        ${topWins.length === 0 ? '<p style="opacity: 0.3;">Нет данных</p>' : topWins.map((win, index) => `
+                                            <div style="display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                                <span>${index + 1}. <strong style="color: #ffe66d;">${win.telegram}</strong></span>
+                                                <span style="color: #f5576c;">${win.amount} PT</span>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+            }
+
+            function addWin(event) {
+                event.preventDefault();
+                const telegram = document.getElementById('win-telegram').value.trim();
+                const prize = document.getElementById('win-prize').value.trim();
+                const amount = parseInt(document.getElementById('win-amount').value);
+
+                if (!telegram || !prize || !amount) {
+                    alert('Заполните все поля!');
+                    return;
+                }
+
+                fetch('/api/add_win', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ telegram, prize, amount })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('✅ ' + data.message);
+                        document.getElementById('win-telegram').value = '';
+                        document.getElementById('win-prize').value = '';
+                        document.getElementById('win-amount').value = '';
+                        renderWins();
+                        loadUserData();
+                    } else {
+                        alert('❌ ' + data.message);
+                    }
+                });
+            }
+
+            function logout() {
+                fetch('/logout')
+                    .then(() => window.location.href = '/');
+            }
+
+            // Инициализация
+            loadUserData();
+            showSection('profile');
+        </script>
     </body>
     </html>
     '''
 
-@app.route('/get_ip')
-def get_ip():
-    return jsonify({'ip': get_client_ip()})
+# === API ENDPOINTS ===
+
+@app.route('/api/user')
+def api_user():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Не авторизован'}), 401
+    
+    users = load_users()
+    user = users.get(session['user_id'])
+    if not user:
+        return jsonify({'success': False, 'message': 'Пользователь не найден'}), 404
+    
+    wins = load_wins()
+    user_wins = [w for w in wins['wins'] if w['telegram'] == user['telegram']]
+    
+    return jsonify({
+        'success': True,
+        'user': {
+            'name': user['name'],
+            'telegram': user['telegram'],
+            'points': user.get('points', 0),
+            'wins_count': len(user_wins),
+            'ip': user['ip'],
+            'registered_at': user['registered_at']
+        }
+    })
+
+@app.route('/api/shop')
+def api_shop():
+    shop = load_shop()
+    return jsonify(shop)
+
+@app.route('/api/buy', methods=['POST'])
+@login_required
+def api_buy():
+    data = request.get_json()
+    item_id = data.get('item_id')
+    
+    shop = load_shop()
+    item = next((i for i in shop['items'] if i['id'] == item_id), None)
+    if not item:
+        return jsonify({'success': False, 'message': 'Товар не найден'})
+    
+    users = load_users()
+    user = users.get(session['user_id'])
+    if not user:
+        return jsonify({'success': False, 'message': 'Пользователь не найден'})
+    
+    if user.get('points', 0) < item['price']:
+        return jsonify({'success': False, 'message': f'Недостаточно баллов! Нужно {item["price"]} PT'})
+    
+    user['points'] = user.get('points', 0) - item['price']
+    user['purchases'] = user.get('purchases', []) + [{
+        'item': item['name'],
+        'price': item['price'],
+        'date': datetime.now().isoformat()
+    }]
+    
+    save_users(users)
+    return jsonify({'success': True, 'message': f'Вы купили {item["name"]}!'})
+
+@app.route('/api/wins')
+def api_wins():
+    wins = load_wins()
+    return jsonify(wins)
+
+@app.route('/api/add_win', methods=['POST'])
+@login_required
+def api_add_win():
+    data = request.get_json()
+    telegram = data.get('telegram', '').strip()
+    prize = data.get('prize', '').strip()
+    amount = data.get('amount', 0)
+    
+    if not telegram.startswith('@'):
+        return jsonify({'success': False, 'message': 'Telegram ник должен начинаться с @'})
+    
+    if not prize or amount <= 0:
+        return jsonify({'success': False, 'message': 'Заполните все поля корректно'})
+    
+    wins = load_wins()
+    wins['last_id'] += 1
+    
+    win_entry = {
+        'id': wins['last_id'],
+        'telegram': telegram,
+        'prize': prize,
+        'amount': amount,
+        'date': datetime.now().isoformat(),
+        'added_by': session.get('user_name', 'admin')
+    }
+    
+    wins['wins'].append(win_entry)
+    save_wins(wins)
+    
+    # Начисляем баллы победителю
+    users = load_users()
+    for user_id, user in users.items():
+        if user['telegram'] == telegram:
+            user['points'] = user.get('points', 0) + amount
+            user['last_win'] = datetime.now().isoformat()
+            save_users(users)
+            break
+    
+    return jsonify({'success': True, 'message': 'Выигрыш добавлен!'})
 
 @app.route('/register', methods=['POST'])
 def register():
@@ -484,133 +531,53 @@ def register():
         name = data.get('name', '').strip()
         telegram = data.get('telegram', '').strip()
         password = data.get('password', '')
-
-        # Валидация
+        
         if not name or len(name) < 2:
             return jsonify({'success': False, 'message': 'Имя слишком короткое'})
-
+        
         if not telegram.startswith('@') or len(telegram) < 3:
             return jsonify({'success': False, 'message': 'Неверный формат Telegram ника'})
-
+        
         if len(password) < 6:
             return jsonify({'success': False, 'message': 'Пароль должен быть минимум 6 символов'})
-
-        # Загружаем пользователей
+        
         users = load_users()
         client_ip = get_client_ip()
-
-        # ★★★ ИЗМЕНЕНИЕ: Проверка IP - только 1 регистрация ★★★
+        
+        # Проверка IP - только 1 регистрация
         ip_registrations = [u for u in users.values() if u.get('ip') == client_ip]
         if len(ip_registrations) >= 1:
-            return jsonify({'success': False, 'message': '⚠️ С этого IP уже зарегистрирован аккаунт! Разрешена только 1 регистрация.'})
-
-        # Проверка уникальности Telegram
+            return jsonify({'success': False, 'message': '⚠️ С этого IP уже зарегистрирован аккаунт!'})
+        
         for user_id, user_data in users.items():
             if user_data.get('telegram') == telegram:
                 return jsonify({'success': False, 'message': 'Этот Telegram уже зарегистрирован'})
-
-        # Создаем нового пользователя
+        
         user_id = str(len(users) + 1)
         users[user_id] = {
             'name': name,
             'telegram': telegram,
             'password_hash': hash_password(password),
             'ip': client_ip,
+            'points': 100,  # Начальный бонус
             'registered_at': datetime.now().isoformat(),
-            'last_login': datetime.now().isoformat()
+            'last_login': datetime.now().isoformat(),
+            'purchases': []
         }
-
+        
         save_users(users)
-
-        # Сохраняем в сессию для авторизации
         session['user_id'] = user_id
         session['user_name'] = name
-
+        
         return jsonify({
             'success': True,
-            'message': f'Добро пожаловать, {name}!',
-            'redirect': '/dashboard'
+            'message': f'Добро пожаловать, {name}! Вы получили 100 PT бонуса!',
+            'redirect': '/'
         })
-
+        
     except Exception as e:
-        print(f"Ошибка: {e}")  # Логирование
+        print(f"Ошибка: {e}")
         return jsonify({'success': False, 'message': 'Ошибка на сервере'})
-
-@app.route('/dashboard')
-def dashboard():
-    if 'user_id' not in session:
-        return '''
-        <script>
-            window.location.href = '/';
-        </script>
-        '''
-    
-    return f'''
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="UTF-8">
-        <title>AniCosmo - Dashboard</title>
-        <style>
-            * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-            body {{
-                font-family: 'Segoe UI', Arial, sans-serif;
-                height: 100vh;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                background: linear-gradient(135deg, #1a1a2e, #16213e);
-                color: white;
-            }}
-            .dashboard {{
-                text-align: center;
-                padding: 50px;
-                background: rgba(255,255,255,0.05);
-                border-radius: 20px;
-                border: 1px solid rgba(255,255,255,0.1);
-                backdrop-filter: blur(10px);
-                max-width: 500px;
-            }}
-            h1 {{ font-size: 48px; margin-bottom: 20px; }}
-            .welcome {{ font-size: 24px; opacity: 0.8; margin-bottom: 15px; }}
-            .info {{ opacity: 0.5; font-size: 14px; margin-bottom: 30px; }}
-            .btn-logout {{
-                padding: 12px 40px;
-                background: rgba(255,107,107,0.2);
-                border: 1px solid rgba(255,107,107,0.3);
-                border-radius: 50px;
-                color: white;
-                cursor: pointer;
-                transition: all 0.3s;
-                font-size: 16px;
-            }}
-            .btn-logout:hover {{
-                background: rgba(255,107,107,0.3);
-                transform: scale(1.05);
-            }}
-            .emoji {{ font-size: 60px; margin-bottom: 20px; }}
-        </style>
-    </head>
-    <body>
-        <div class="dashboard">
-            <div class="emoji">🚀</div>
-            <h1>Добро пожаловать!</h1>
-            <div class="welcome">Привет, {session.get('user_name', 'Пользователь')}!</div>
-            <div class="info">
-                <p>Вы успешно зарегистрировались в AniCosmo</p>
-                <p style="margin-top: 10px;">Скоро здесь появится контент</p>
-            </div>
-            <button class="btn-logout" onclick="logout()">Выйти</button>
-        </div>
-        <script>
-            function logout() {{
-                fetch('/logout')
-                    .then(() => window.location.href = '/');
-            }}
-        </script>
-    </body>
-    </html>
-    '''
 
 @app.route('/logout')
 def logout():
@@ -622,20 +589,23 @@ def background():
     try:
         return send_file('background.jpg')
     except:
-        # Создаем простой градиент если файла нет
         from flask import Response
         import io
         from PIL import Image, ImageDraw
         
-        img = Image.new('RGB', (1920, 1080), color=(26, 26, 46))
+        img = Image.new('RGB', (1920, 1080), color=(15, 12, 41))
         draw = ImageDraw.Draw(img)
         for i in range(0, 1080, 20):
-            draw.rectangle([0, i, 1920, i+10], fill=(22, 33, 62))
+            draw.rectangle([0, i, 1920, i+10], fill=(48, 43, 99))
         
         img_io = io.BytesIO()
         img.save(img_io, 'JPEG')
         img_io.seek(0)
         return Response(img_io.getvalue(), mimetype='image/jpeg')
+
+@app.route('/get_ip')
+def get_ip():
+    return jsonify({'ip': get_client_ip()})
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
