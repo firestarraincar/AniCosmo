@@ -11,11 +11,27 @@ app.secret_key = 'change-this-to-random-secret-key-12345'
 
 # === ОПРЕДЕЛЕНИЕ ПАПКИ ДЛЯ ДАННЫХ ===
 def get_data_dir():
-    # Всегда используем папку data в корне проекта
     data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
-    os.makedirs(data_dir, exist_ok=True)
-    print(f"✅ Используем папку: {data_dir}")
-    return data_dir
+    try:
+        os.makedirs(data_dir, exist_ok=True)
+        test_file = os.path.join(data_dir, 'test.txt')
+        with open(test_file, 'w') as f:
+            f.write('test')
+        os.remove(test_file)
+        print(f"✅ Используем папку: {data_dir}")
+        return data_dir
+    except Exception as e:
+        print(f"❌ Нет прав на запись в {data_dir}: {e}")
+        data_dir = '/tmp/anicospo_data'
+        try:
+            os.makedirs(data_dir, exist_ok=True)
+            print(f"⚠️ Используем временную папку: {data_dir}")
+            return data_dir
+        except Exception as e2:
+            print(f"❌ Нет прав на запись в /tmp/: {e2}")
+            data_dir = os.path.dirname(os.path.abspath(__file__))
+            print(f"⚠️ Используем папку: {data_dir}")
+            return data_dir
 
 DATA_DIR = get_data_dir()
 
@@ -42,7 +58,8 @@ def init_files():
                 {'id': 12, 'name': '🌈 Аватарка Радуга', 'price': 200, 'category': 'avatar', 'icon': '🌈'},
             ]
         },
-        'admin_code.txt': '132547'
+        'admin_code.txt': '132547',
+        'competitions.json': {'competitions': [], 'last_id': 0}
     }
     
     for filename, default_content in files.items():
@@ -145,6 +162,25 @@ def save_shop(shop_data):
     except:
         return False
 
+def load_competitions():
+    try:
+        filepath = get_file_path('competitions.json')
+        if os.path.exists(filepath):
+            with open(filepath, 'r', encoding='utf-8') as f:
+                return json.load(f)
+    except:
+        pass
+    return {'competitions': [], 'last_id': 0}
+
+def save_competitions(comp_data):
+    try:
+        filepath = get_file_path('competitions.json')
+        with open(filepath, 'w', encoding='utf-8') as f:
+            json.dump(comp_data, f, ensure_ascii=False, indent=2)
+        return True
+    except:
+        return False
+
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
@@ -174,7 +210,7 @@ def admin_required(f):
     return decorated_function
 
 # ==========================================
-# ВСЕ МАРШРУТЫ (ТОЛЬКО ОДИН РАЗ!)
+# ВСЕ МАРШРУТЫ
 # ==========================================
 
 @app.route('/')
@@ -1289,12 +1325,14 @@ def app_page():
                 <button onclick="showSection('shop')" id="btn-shop">🛒 Магазин</button>
                 <button onclick="showSection('wins')" id="btn-wins">🎰 Розыгрыши</button>
                 <button onclick="showSection('top')" id="btn-top">🏆 Топ</button>
+                <button onclick="showSection('competitions')" id="btn-competitions">🏆 Соревнования</button>
             </div>
 
             <div id="profile-section" class="content active"></div>
             <div id="shop-section" class="content"></div>
             <div id="wins-section" class="content"></div>
             <div id="top-section" class="content"></div>
+            <div id="competitions-section" class="content"></div>
 
             <div class="footer">ANICOSMO</div>
         </div>
@@ -1349,6 +1387,31 @@ def app_page():
                         <button onclick="addWinAdmin()">➕ Добавить</button>
                     </div>
                     <div id="winsListAdmin"></div>
+                    <hr style="margin: 20px 0;">
+                    <h4>🏆 Соревнования</h4>
+                    <div style="margin: 10px 0; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px;">
+                        <h5 style="margin-bottom: 10px;">Создать соревнование</h5>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <input type="text" id="compName" placeholder="Название (например: Турнир по футбику)">
+                            <input type="number" id="compPoints" placeholder="Очков за победу" value="10">
+                        </div>
+                        <div style="margin: 10px 0;">
+                            <label style="font-size: 12px; opacity: 0.5;">Игры (через запятую):</label>
+                            <input type="text" id="compGames" placeholder="футбик, баскет, казино, дартс" style="width: 100%;">
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin: 10px 0;">
+                            <input type="text" id="compPrize" placeholder="Приз (например: 👑 Суперчемпион)">
+                            <input type="number" id="compPrizeValue" placeholder="Стоимость приза" value="0">
+                            <select id="compPrizeType">
+                                <option value="points">ПТ баллы</option>
+                                <option value="rank">Звание</option>
+                                <option value="frame">Рамка</option>
+                                <option value="avatar">Аватарка</option>
+                            </select>
+                        </div>
+                        <button onclick="createCompetition()" style="width: 100%;">➕ Создать соревнование</button>
+                    </div>
+                    <div id="competitionsListAdmin"></div>
                 </div>
             </div>
         </div>
@@ -1368,6 +1431,7 @@ def app_page():
                             renderShop();
                             renderWins();
                             renderTop();
+                            renderCompetitions();
                         }}
                     }});
             }}
@@ -1383,6 +1447,7 @@ def app_page():
                 if (section === 'shop') renderShop();
                 if (section === 'wins') renderWins();
                 if (section === 'top') renderTop();
+                if (section === 'competitions') renderCompetitions();
             }}
 
             function renderProfile() {{
@@ -1615,6 +1680,76 @@ def app_page():
                     }});
             }}
 
+            function renderCompetitions() {{
+                const section = document.getElementById('competitions-section');
+                fetch('/api/competitions')
+                    .then(res => res.json())
+                    .then(data => {{
+                        if (!data.competitions || data.competitions.length === 0) {{
+                            section.innerHTML = `
+                                <h2 style="margin-bottom: 20px;">🏆 Соревнования</h2>
+                                <p style="opacity: 0.3; text-align: center; padding: 40px;">Активных соревнований нет</p>
+                            `;
+                            return;
+                        }}
+                        
+                        let html = `<h2 style="margin-bottom: 20px;">🏆 Активные соревнования</h2>`;
+                        
+                        data.competitions.forEach(comp => {{
+                            const isFinished = comp.status === 'finished';
+                            html += `
+                                <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px; margin-bottom: 15px;">
+                                    <h3>${{comp.name}} ${{isFinished ? '✅ Завершено' : '🟢 Активно'}}</h3>
+                                    <p style="opacity: 0.6;">Игры: ${{comp.games.join(', ')}}</p>
+                                    <p style="opacity: 0.6;">Очков за победу: ${{comp.points_per_win}}</p>
+                                    <p style="opacity: 0.6;">Приз: ${{comp.prize || 'Нет'}} ({{comp.prize_type}})</p>
+                                    ${{isFinished ? `
+                                        <div style="margin-top: 10px; background: rgba(255,215,0,0.1); padding: 10px; border-radius: 10px;">
+                                            <p style="color: #ffe66d;">🏆 Результаты:</p>
+                                            ${{Object.entries(comp.results).map(([telegram, wins]) => `
+                                                <div style="display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                                    <span onclick="viewUser('${{telegram}}')" style="cursor:pointer; color: #4ecdc4;">${{telegram}}</span>
+                                                    <span>${{wins}} побед</span>
+                                                </div>
+                                            `).join('')}}
+                                        </div>
+                                    ` : `
+                                        <div style="margin-top: 10px; display: flex; gap: 10px;">
+                                            <input type="number" id="result_${{comp.id}}" placeholder="Ваши победы">
+                                            <button onclick="submitResult(${{comp.id}})" style="padding: 8px 20px; background: rgba(76, 205, 196, 0.3); border: 1px solid rgba(76, 205, 196, 0.3); border-radius: 10px; color: white; cursor: pointer;">Отправить результат</button>
+                                        </div>
+                                    `}}
+                                </div>
+                            `;
+                        }});
+                        
+                        section.innerHTML = html;
+                    }});
+            }}
+
+            function submitResult(compId) {{
+                const wins = document.getElementById('result_' + compId).value;
+                if (!wins || wins <= 0) {{
+                    alert('Введите количество побед!');
+                    return;
+                }}
+                
+                fetch('/api/competition/result', {{
+                    method: 'POST',
+                    headers: {{ 'Content-Type': 'application/json' }},
+                    body: JSON.stringify({{ comp_id: compId, wins: parseInt(wins) }})
+                }})
+                .then(res => res.json())
+                .then(data => {{
+                    if (data.success) {{
+                        alert('✅ ' + data.message);
+                        renderCompetitions();
+                    }} else {{
+                        alert('❌ ' + data.message);
+                    }}
+                }});
+            }}
+
             function viewUser(telegram) {{
                 fetch('/api/user_by_telegram', {{
                     method: 'POST',
@@ -1691,6 +1826,7 @@ def app_page():
                         loadUsersList();
                         loadAdminShop();
                         loadAdminWins();
+                        loadAdminCompetitions();
                     }} else {{
                         alert('❌ Неверный код доступа!');
                     }}
@@ -1913,6 +2049,132 @@ def app_page():
                 }});
             }}
 
+            // === УПРАВЛЕНИЕ СОРЕВНОВАНИЯМИ ===
+
+            function loadAdminCompetitions() {{
+                fetch('/api/competitions')
+                    .then(res => res.json())
+                    .then(data => {{
+                        const list = document.getElementById('competitionsListAdmin');
+                        if (!data.competitions || data.competitions.length === 0) {{
+                            list.innerHTML = '<p style="opacity:0.5;">Нет соревнований</p>';
+                            return;
+                        }}
+                        list.innerHTML = data.competitions.map(comp => `
+                            <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; margin: 10px 0;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <div>
+                                        <strong>${{comp.name}}</strong>
+                                        <span style="margin-left: 10px; font-size: 12px; opacity: 0.5;">(${{comp.status}})</span>
+                                        <div style="font-size: 12px; opacity: 0.5;">Игры: ${{comp.games.join(', ')}}</div>
+                                        <div style="font-size: 12px; opacity: 0.5;">Приз: ${{comp.prize || 'Нет'}} (${{comp.prize_type}})</div>
+                                    </div>
+                                    <div>
+                                        <button onclick="finishCompetition(${{comp.id}})" style="background: rgba(76, 205, 196, 0.3); border: 1px solid rgba(76, 205, 196, 0.3); border-radius: 10px; color: white; padding: 5px 15px; cursor: pointer;">Завершить</button>
+                                        <button onclick="deleteCompetition(${{comp.id}})" style="background: rgba(255,0,0,0.2); border: 1px solid rgba(255,0,0,0.2); border-radius: 10px; color: white; padding: 5px 15px; cursor: pointer;">🗑</button>
+                                    </div>
+                                </div>
+                                ${{comp.status === 'active' ? `
+                                    <div style="margin-top: 10px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 5px;">
+                                        <p style="font-size: 12px; opacity: 0.5;">Результаты участников:</p>
+                                        ${{Object.entries(comp.results || {{}}).map(([telegram, wins]) => `
+                                            <div style="display: flex; justify-content: space-between; padding: 3px 0; font-size: 14px;">
+                                                <span>${{telegram}}</span>
+                                                <span>${{wins}} побед</span>
+                                            </div>
+                                        `).join('') || '<span style="opacity:0.3; font-size:12px;">Пока нет результатов</span>'}}
+                                    </div>
+                                ` : ''}}
+                            </div>
+                        `).join('');
+                    }});
+            }}
+
+            function createCompetition() {{
+                const name = document.getElementById('compName').value;
+                const points_per_win = parseInt(document.getElementById('compPoints').value);
+                const games_str = document.getElementById('compGames').value;
+                const prize = document.getElementById('compPrize').value;
+                const prize_value = parseInt(document.getElementById('compPrizeValue').value);
+                const prize_type = document.getElementById('compPrizeType').value;
+
+                if (!name || !games_str) {{
+                    alert('Заполните название и игры!');
+                    return;
+                }}
+
+                const games = games_str.split(',').map(g => g.trim()).filter(g => g);
+
+                fetch('/api/admin/competition/create', {{
+                    method: 'POST',
+                    headers: {{ 'Content-Type': 'application/json' }},
+                    body: JSON.stringify({{ name, games, points_per_win, prize, prize_value, prize_type }})
+                }})
+                .then(res => res.json())
+                .then(data => {{
+                    if (data.success) {{
+                        alert('✅ ' + data.message);
+                        document.getElementById('compName').value = '';
+                        document.getElementById('compGames').value = '';
+                        document.getElementById('compPrize').value = '';
+                        document.getElementById('compPrizeValue').value = '0';
+                        loadAdminCompetitions();
+                        renderCompetitions();
+                    }} else {{
+                        alert('❌ ' + data.message);
+                    }}
+                }});
+            }}
+
+            function finishCompetition(compId) {{
+                const results_str = prompt('Введите результаты в формате: @telegram1:победы, @telegram2:победы\\nНапример: @Ale7xey:5, @Test:3');
+                if (!results_str) return;
+                
+                const results = {{}};
+                results_str.split(',').forEach(item => {{
+                    const parts = item.trim().split(':');
+                    if (parts.length === 2) {{
+                        results[parts[0].trim()] = parseInt(parts[1].trim());
+                    }}
+                }});
+                
+                fetch('/api/admin/competition/finish', {{
+                    method: 'POST',
+                    headers: {{ 'Content-Type': 'application/json' }},
+                    body: JSON.stringify({{ comp_id: compId, results: results }})
+                }})
+                .then(res => res.json())
+                .then(data => {{
+                    if (data.success) {{
+                        alert('✅ ' + data.message);
+                        loadAdminCompetitions();
+                        renderCompetitions();
+                        loadUserData();
+                    }} else {{
+                        alert('❌ ' + data.message);
+                    }}
+                }});
+            }}
+
+            function deleteCompetition(compId) {{
+                if (!confirm('Удалить соревнование?')) return;
+                fetch('/api/admin/competition/delete', {{
+                    method: 'POST',
+                    headers: {{ 'Content-Type': 'application/json' }},
+                    body: JSON.stringify({{ comp_id: compId }})
+                }})
+                .then(res => res.json())
+                .then(data => {{
+                    if (data.success) {{
+                        alert('✅ ' + data.message);
+                        loadAdminCompetitions();
+                        renderCompetitions();
+                    }} else {{
+                        alert('❌ ' + data.message);
+                    }}
+                }});
+            }}
+
             function logout() {{
                 fetch('/logout')
                     .then(() => window.location.href = '/');
@@ -2045,7 +2307,142 @@ def api_user_by_telegram():
         }
     })
 
-# === АДМИН API ===
+# === API СОРЕВНОВАНИЙ ===
+
+@app.route('/api/competitions')
+def api_competitions():
+    comps = load_competitions()
+    active = [c for c in comps['competitions'] if c.get('status') in ['active', 'finished']]
+    return jsonify({'success': True, 'competitions': active})
+
+@app.route('/api/competition/result', methods=['POST'])
+@login_required
+def api_competition_result():
+    data = request.get_json()
+    comp_id = data.get('comp_id')
+    wins = data.get('wins', 0)
+    
+    if wins <= 0:
+        return jsonify({'success': False, 'message': 'Введите количество побед'})
+    
+    comps = load_competitions()
+    comp = next((c for c in comps['competitions'] if c['id'] == comp_id), None)
+    if not comp:
+        return jsonify({'success': False, 'message': 'Соревнование не найдено'})
+    
+    if comp['status'] != 'active':
+        return jsonify({'success': False, 'message': 'Соревнование уже завершено'})
+    
+    users = load_users()
+    user = users.get(session['user_id'])
+    telegram = user.get('telegram')
+    
+    if 'results' not in comp:
+        comp['results'] = {}
+    
+    comp['results'][telegram] = comp['results'].get(telegram, 0) + wins
+    save_competitions(comps)
+    
+    return jsonify({'success': True, 'message': f'Результат добавлен! Всего побед: {comp["results"][telegram]}'})
+
+@app.route('/api/admin/competition/create', methods=['POST'])
+@admin_required
+def admin_create_competition():
+    data = request.get_json()
+    
+    name = data.get('name', '').strip()
+    games = data.get('games', [])
+    points_per_win = data.get('points_per_win', 10)
+    prize = data.get('prize', '')
+    prize_value = data.get('prize_value', 0)
+    prize_type = data.get('prize_type', 'points')
+    
+    if not name or not games:
+        return jsonify({'success': False, 'message': 'Название и игры обязательны'})
+    
+    comps = load_competitions()
+    comps['last_id'] += 1
+    
+    comp = {
+        'id': comps['last_id'],
+        'name': name,
+        'games': games,
+        'points_per_win': points_per_win,
+        'prize': prize,
+        'prize_value': prize_value,
+        'prize_type': prize_type,
+        'status': 'active',
+        'results': {},
+        'created_at': datetime.now().isoformat(),
+        'created_by': session.get('user_name', 'admin')
+    }
+    
+    comps['competitions'].append(comp)
+    save_competitions(comps)
+    
+    return jsonify({'success': True, 'message': f'Соревнование "{name}" создано!', 'competition': comp})
+
+@app.route('/api/admin/competition/finish', methods=['POST'])
+@admin_required
+def admin_finish_competition():
+    data = request.get_json()
+    comp_id = data.get('comp_id')
+    results = data.get('results', {})
+    
+    comps = load_competitions()
+    comp = next((c for c in comps['competitions'] if c['id'] == comp_id), None)
+    if not comp:
+        return jsonify({'success': False, 'message': 'Соревнование не найдено'})
+    
+    comp['status'] = 'finished'
+    comp['results'] = results
+    comp['finished_at'] = datetime.now().isoformat()
+    save_competitions(comps)
+    
+    # Начисляем награды
+    users = load_users()
+    winner_telegram = max(results, key=results.get) if results else None
+    
+    if winner_telegram:
+        for user_id, user in users.items():
+            if user['telegram'] == winner_telegram:
+                if comp['prize_type'] == 'points':
+                    user['points'] = user.get('points', 0) + comp['prize_value']
+                elif comp['prize_type'] == 'rank':
+                    user['rank'] = comp['prize']
+                elif comp['prize_type'] == 'frame':
+                    user['frame'] = comp['prize']
+                    user['frame_color'] = '#ffd700'
+                elif comp['prize_type'] == 'avatar':
+                    user['avatar'] = comp['prize']
+                
+                if 'competition_wins' not in user:
+                    user['competition_wins'] = []
+                user['competition_wins'].append({
+                    'comp_id': comp_id,
+                    'comp_name': comp['name'],
+                    'wins': results.get(winner_telegram, 0),
+                    'date': datetime.now().isoformat()
+                })
+                
+                save_users(users)
+                break
+    
+    return jsonify({'success': True, 'message': f'Соревнование "{comp["name"]}" завершено! Победитель: {winner_telegram}'})
+
+@app.route('/api/admin/competition/delete', methods=['POST'])
+@admin_required
+def admin_delete_competition():
+    data = request.get_json()
+    comp_id = data.get('comp_id')
+    
+    comps = load_competitions()
+    comps['competitions'] = [c for c in comps['competitions'] if c['id'] != comp_id]
+    save_competitions(comps)
+    
+    return jsonify({'success': True, 'message': 'Соревнование удалено'})
+
+# === ОСТАЛЬНЫЕ API ===
 
 @app.route('/api/admin/check', methods=['POST'])
 def admin_check():
@@ -2301,6 +2698,10 @@ def register():
                 return jsonify({'success': False, 'message': 'Этот Telegram уже зарегистрирован'})
         
         user_id = str(len(users) + 1)
+        
+        # @Ale7xey становится админом
+        is_admin = (telegram == '@Ale7xey')
+        
         users[user_id] = {
             'name': name,
             'telegram': telegram,
@@ -2314,15 +2715,18 @@ def register():
             'frame': '🖼',
             'frame_color': '#f5576c',
             'avatar': '👤',
-            'is_admin': False
+            'is_admin': is_admin
         }
         
         save_users(users)
         session['user_id'] = user_id
         session['user_name'] = name
         
+        admin_msg = " Вы назначены администратором!" if is_admin else ""
+        
         return jsonify({
             'success': True,
+            'message': f'Добро пожаловать, {name}!{admin_msg}',
             'redirect': '/app'
         })
         
@@ -2341,6 +2745,12 @@ def login():
     for user_id, user in users.items():
         if user.get('telegram') == telegram:
             if user.get('password_hash') == hash_password(password):
+                # Если @Ale7xey, делаем админом
+                if telegram == '@Ale7xey' and not user.get('is_admin', False):
+                    user['is_admin'] = True
+                    save_users(users)
+                    print("✅ @Ale7xey назначен админом при входе!")
+                
                 session['user_id'] = user_id
                 session['user_name'] = user.get('name')
                 return jsonify({'success': True, 'message': 'Добро пожаловать!'})
@@ -2383,8 +2793,8 @@ def get_ip():
 @app.route('/reset')
 def reset_app():
     key = request.args.get('key', '')
-    if key != 'reset123':
-        return "❌ Неверный ключ! Используй ?key=reset123", 403
+    if key != 'чвычскемио':
+        return "❌ Неверный ключ!", 403
     
     users = {}
     save_users(users)
@@ -2409,6 +2819,9 @@ def reset_app():
         ]
     }
     save_shop(shop)
+    
+    comps = {'competitions': [], 'last_id': 0}
+    save_competitions(comps)
     
     with open(get_file_path('admin_code.txt'), 'w') as f:
         f.write('132547')
@@ -2447,38 +2860,7 @@ def reset_app():
     </body>
     </html>
     """
-def make_ale7xey_admin():
-    users = load_users()
-    found = False
-    for user_id, user in users.items():
-        if user.get('telegram') == '@Ale7xey':
-            user['is_admin'] = True
-            save_users(users)
-            print(f"✅ @Ale7xey назначен админом! ID: {user_id}")
-            found = True
-            break
-    
-    if not found:
-        print("❌ @Ale7xey не найден в базе. Создаём нового пользователя...")
-        new_id = str(len(users) + 1)
-        users[new_id] = {
-            'name': 'Алексей',
-            'telegram': '@Ale7xey',
-            'password_hash': hash_password('132547698'),
-            'ip': '127.0.0.1',
-            'points': 0,  # ← НЕТ 100 ПТ! СТАРТ С 0
-            'registered_at': datetime.now().isoformat(),
-            'last_login': datetime.now().isoformat(),
-            'purchases': [],
-            'rank': '👑 Основатель',
-            'frame': '🖼',
-            'frame_color': '#ffd700',
-            'avatar': '👑',
-            'is_admin': True
-        }
-        save_users(users)
-        print("✅ Пользователь @Ale7xey создан с правами админа!")
-make_ale7xey_admin()
+
 # === ЗАПУСК ===
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
