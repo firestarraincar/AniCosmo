@@ -1,8 +1,7 @@
-from flask import Flask, send_file, request, jsonify, session, render_template_string
+from flask import Flask, send_file, request, jsonify, session
 import os
 import json
 import hashlib
-import random
 from datetime import datetime
 from functools import wraps
 
@@ -13,8 +12,6 @@ app.secret_key = 'change-this-to-random-secret-key-12345'
 USERS_FILE = 'users.json'
 WINS_FILE = 'wins.json'
 SHOP_FILE = 'shop.json'
-
-# === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===
 
 def load_users():
     if os.path.exists(USERS_FILE):
@@ -40,14 +37,20 @@ def load_shop():
     if os.path.exists(SHOP_FILE):
         with open(SHOP_FILE, 'r', encoding='utf-8') as f:
             return json.load(f)
-    # Товары по умолчанию
     return {
         'items': [
-            {'id': 1, 'name': '⭐ Премиум роль', 'price': 1000, 'icon': '👑'},
-            {'id': 2, 'name': '🎨 Уникальный никнейм', 'price': 500, 'icon': '✨'},
-            {'id': 3, 'name': '📢 Реклама в канале', 'price': 2000, 'icon': '📣'},
-            {'id': 4, 'name': '🎮 Доступ к бете', 'price': 1500, 'icon': '🎯'},
-            {'id': 5, 'name': '🖼 Кастомная рамка', 'price': 300, 'icon': '🖼'}
+            {'id': 1, 'name': '👑 Победитель', 'price': 500, 'category': 'rank', 'icon': '👑'},
+            {'id': 2, 'name': '⭐ Чемпион', 'price': 1000, 'category': 'rank', 'icon': '⭐'},
+            {'id': 3, 'name': '🎖 Легенда', 'price': 2000, 'category': 'rank', 'icon': '🎖'},
+            {'id': 4, 'name': '🖼 Золотая рамка', 'price': 300, 'category': 'frame', 'icon': '🖼'},
+            {'id': 5, 'name': '🖼 Серебряная рамка', 'price': 200, 'category': 'frame', 'icon': '🖼'},
+            {'id': 6, 'name': '🖼 Бронзовая рамка', 'price': 100, 'category': 'frame', 'icon': '🖼'},
+            {'id': 7, 'name': '🖼 Алмазная рамка', 'price': 500, 'category': 'frame', 'icon': '💎'},
+            {'id': 8, 'name': '🐱 Аватарка Кот', 'price': 150, 'category': 'avatar', 'icon': '🐱'},
+            {'id': 9, 'name': '🐶 Аватарка Пёс', 'price': 150, 'category': 'avatar', 'icon': '🐶'},
+            {'id': 10, 'name': '🦊 Аватарка Лиса', 'price': 150, 'category': 'avatar', 'icon': '🦊'},
+            {'id': 11, 'name': '🐲 Аватарка Дракон', 'price': 300, 'category': 'avatar', 'icon': '🐲'},
+            {'id': 12, 'name': '🌈 Аватарка Радуга', 'price': 200, 'category': 'avatar', 'icon': '🌈'},
         ]
     }
 
@@ -86,20 +89,37 @@ def home():
             body {
                 font-family: 'Segoe UI', Arial, sans-serif;
                 min-height: 100vh;
-                background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+                background-image: url('/background');
+                background-size: cover;
+                background-position: center;
+                background-repeat: no-repeat;
                 color: white;
-                display: flex;
-                justify-content: center;
-                align-items: center;
                 padding: 20px;
+                position: relative;
+            }
+            .overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.6);
+                z-index: 0;
             }
             .container {
                 max-width: 1200px;
                 width: 100%;
+                margin: 0 auto;
+                position: relative;
+                z-index: 1;
             }
             .header {
                 text-align: center;
-                margin-bottom: 40px;
+                margin-bottom: 30px;
+                padding: 20px;
+                background: rgba(0,0,0,0.3);
+                border-radius: 20px;
+                backdrop-filter: blur(10px);
             }
             .header h1 {
                 font-size: 48px;
@@ -107,23 +127,49 @@ def home():
                 background: linear-gradient(135deg, #f093fb, #f5576c);
                 -webkit-background-clip: text;
                 -webkit-text-fill-color: transparent;
-                margin-bottom: 10px;
+                margin-bottom: 5px;
             }
             .header .subtitle {
                 opacity: 0.6;
-                font-size: 18px;
+                font-size: 16px;
                 letter-spacing: 2px;
+            }
+            .header .user-controls {
+                margin-top: 15px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                gap: 15px;
+                flex-wrap: wrap;
+            }
+            .header .user-controls a {
+                color: #f5576c;
+                text-decoration: none;
+                font-size: 18px;
+            }
+            .btn-logout {
+                padding: 8px 25px;
+                background: rgba(255,107,107,0.2);
+                border: 1px solid rgba(255,107,107,0.2);
+                border-radius: 50px;
+                color: white;
+                cursor: pointer;
+                font-size: 14px;
+                transition: all 0.3s;
+            }
+            .btn-logout:hover {
+                background: rgba(255,107,107,0.3);
             }
             .main-menu {
                 display: flex;
                 justify-content: center;
-                gap: 20px;
+                gap: 15px;
                 flex-wrap: wrap;
-                margin-bottom: 40px;
+                margin-bottom: 30px;
             }
             .main-menu button {
-                padding: 15px 40px;
-                font-size: 18px;
+                padding: 12px 30px;
+                font-size: 16px;
                 border: 2px solid rgba(255,255,255,0.1);
                 border-radius: 50px;
                 background: rgba(255,255,255,0.05);
@@ -138,14 +184,13 @@ def home():
                 background: rgba(255,255,255,0.1);
                 border-color: #f5576c;
                 transform: translateY(-2px);
-                box-shadow: 0 10px 30px rgba(245, 87, 108, 0.2);
             }
             .main-menu button.active {
                 background: rgba(245, 87, 108, 0.2);
                 border-color: #f5576c;
             }
             .content {
-                background: rgba(255,255,255,0.05);
+                background: rgba(0,0,0,0.4);
                 backdrop-filter: blur(20px);
                 border-radius: 20px;
                 padding: 30px;
@@ -158,40 +203,230 @@ def home():
             }
             .footer {
                 text-align: center;
-                margin-top: 40px;
+                margin-top: 30px;
                 opacity: 0.3;
                 font-size: 13px;
                 letter-spacing: 3px;
             }
-            .btn-logout {
-                padding: 8px 20px;
+            .admin-panel {
+                background: rgba(255,0,0,0.1);
+                border: 1px solid rgba(255,0,0,0.2);
+                border-radius: 15px;
+                padding: 20px;
+                margin-top: 20px;
+            }
+            .admin-panel h4 {
+                color: #ff6b6b;
+                margin-bottom: 15px;
+            }
+            .admin-panel input, .admin-panel select {
+                padding: 10px;
+                background: rgba(255,255,255,0.05);
+                border: 1px solid rgba(255,255,255,0.1);
+                border-radius: 10px;
+                color: white;
+                outline: none;
+            }
+            .admin-panel button {
+                padding: 10px 20px;
                 background: rgba(255,107,107,0.2);
                 border: 1px solid rgba(255,107,107,0.2);
+                border-radius: 10px;
+                color: white;
+                cursor: pointer;
+                transition: all 0.3s;
+            }
+            .admin-panel button:hover {
+                background: rgba(255,107,107,0.3);
+            }
+            .shop-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+                gap: 20px;
+                margin-top: 20px;
+            }
+            .shop-item {
+                background: rgba(255,255,255,0.05);
+                padding: 20px;
+                border-radius: 15px;
+                text-align: center;
+                transition: all 0.3s;
+            }
+            .shop-item:hover {
+                transform: translateY(-5px);
+                background: rgba(255,255,255,0.08);
+            }
+            .shop-item .icon {
+                font-size: 40px;
+            }
+            .shop-item .name {
+                margin: 10px 0;
+                font-weight: 500;
+            }
+            .shop-item .price {
+                color: #f5576c;
+                font-weight: bold;
+            }
+            .shop-item .category-badge {
+                font-size: 11px;
+                opacity: 0.5;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+            }
+            .shop-item button {
+                margin-top: 10px;
+                padding: 8px 25px;
+                background: rgba(245,87,108,0.3);
+                border: 1px solid rgba(245,87,108,0.3);
                 border-radius: 50px;
                 color: white;
                 cursor: pointer;
-                font-size: 14px;
                 transition: all 0.3s;
-                margin-left: 20px;
             }
-            .btn-logout:hover {
-                background: rgba(255,107,107,0.3);
+            .shop-item button:hover {
+                background: rgba(245,87,108,0.5);
             }
-            .user-info {
-                display: inline-flex;
+            .shop-item .owned {
+                color: #4ecdc4;
+                font-size: 14px;
+                margin-top: 5px;
+            }
+            .wins-list {
+                max-height: 400px;
+                overflow-y: auto;
+            }
+            .win-item {
+                display: flex;
+                justify-content: space-between;
+                padding: 12px;
+                border-bottom: 1px solid rgba(255,255,255,0.05);
                 align-items: center;
-                gap: 15px;
+            }
+            .win-item .telegram { color: #4ecdc4; font-weight: bold; }
+            .win-item .amount { color: #f5576c; font-weight: bold; }
+            .win-item .prize { opacity: 0.7; }
+            .win-item .date { opacity: 0.3; font-size: 12px; }
+            .profile-info {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 20px;
+                max-width: 800px;
+                margin: 0 auto;
+            }
+            .profile-card {
+                background: rgba(255,255,255,0.05);
+                padding: 25px;
+                border-radius: 15px;
+                text-align: center;
+            }
+            .profile-card .value {
+                font-size: 32px;
+                font-weight: bold;
+                margin: 10px 0;
+            }
+            .profile-card .label {
+                opacity: 0.5;
+                font-size: 14px;
+            }
+            .profile-avatar {
+                font-size: 80px;
+                text-align: center;
+                margin-bottom: 20px;
+            }
+            .profile-frame {
+                border: 3px solid #f5576c;
+                border-radius: 20px;
+                padding: 20px;
+                display: inline-block;
+            }
+            .profile-rank {
+                font-size: 24px;
+                color: #ffe66d;
+            }
+            .modal {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.8);
+                z-index: 1000;
+                justify-content: center;
+                align-items: center;
+            }
+            .modal.active {
+                display: flex;
+            }
+            .modal-content {
+                background: #1a1a2e;
+                padding: 40px;
+                border-radius: 20px;
+                max-width: 500px;
+                width: 90%;
+                max-height: 80vh;
+                overflow-y: auto;
+            }
+            .modal-content h3 {
+                margin-bottom: 20px;
+            }
+            .modal-content input {
+                width: 100%;
+                padding: 12px;
+                margin: 10px 0;
+                background: rgba(255,255,255,0.05);
+                border: 1px solid rgba(255,255,255,0.1);
+                border-radius: 10px;
+                color: white;
+                outline: none;
+            }
+            .modal-content button {
+                padding: 12px 30px;
+                background: rgba(245,87,108,0.3);
+                border: 1px solid rgba(245,87,108,0.3);
+                border-radius: 10px;
+                color: white;
+                cursor: pointer;
+                margin: 5px;
+            }
+            .modal-content button:hover {
+                background: rgba(245,87,108,0.5);
+            }
+            .modal-close {
+                float: right;
+                background: none;
+                border: none;
+                color: white;
+                font-size: 24px;
+                cursor: pointer;
+            }
+            .code-input {
+                display: flex;
+                gap: 10px;
+                align-items: center;
+                margin: 10px 0;
+            }
+            .code-input input {
+                flex: 1;
+            }
+            .frame-preview {
+                border: 3px solid #f5576c;
+                border-radius: 15px;
+                padding: 10px;
+                display: inline-block;
             }
         </style>
     </head>
     <body>
+        <div class="overlay"></div>
         <div class="container">
             <div class="header">
                 <h1>🌟 AniCosmo</h1>
                 <div class="subtitle">Канал по Аникарду</div>
-                <div style="margin-top: 15px;">
-                    <a href="https://t.me/AniCosmoDay" target="_blank" style="color: #f5576c; text-decoration: none; font-size: 18px;">@AniCosmoDay</a>
+                <div class="user-controls">
+                    <a href="https://t.me/AniCosmoDay" target="_blank">@AniCosmoDay</a>
                     <button class="btn-logout" onclick="logout()">Выйти</button>
+                    <button class="btn-logout" onclick="showAdminPanel()" style="background: rgba(255,215,0,0.2); border-color: rgba(255,215,0,0.3);">🔑 Админ</button>
                 </div>
             </div>
 
@@ -208,10 +443,46 @@ def home():
             <div class="footer">ANICOSMO</div>
         </div>
 
+        <!-- Модальное окно админ-панели -->
+        <div id="adminModal" class="modal">
+            <div class="modal-content">
+                <button class="modal-close" onclick="closeAdminPanel()">✕</button>
+                <h3>🔐 Админ-панель</h3>
+                <div class="code-input">
+                    <input type="password" id="adminCode" placeholder="Введите код доступа">
+                    <button onclick="checkAdminCode()">Войти</button>
+                </div>
+                <div id="adminContent" style="display: none; margin-top: 20px;">
+                    <h4>📦 Управление магазином</h4>
+                    <div style="margin: 10px 0;">
+                        <input type="text" id="itemName" placeholder="Название">
+                        <input type="number" id="itemPrice" placeholder="Цена в ПТ">
+                        <select id="itemCategory">
+                            <option value="rank">Звание</option>
+                            <option value="frame">Рамка</option>
+                            <option value="avatar">Аватарка</option>
+                        </select>
+                        <input type="text" id="itemIcon" placeholder="Иконка (эмодзи)">
+                        <button onclick="addShopItem()">➕ Добавить</button>
+                    </div>
+                    <div id="shopItemsList"></div>
+                    <hr style="margin: 20px 0;">
+                    <h4>🎰 Управление выигрышами</h4>
+                    <div style="margin: 10px 0;">
+                        <input type="text" id="winTelegram" placeholder="@telegram">
+                        <input type="text" id="winPrize" placeholder="Что выиграл">
+                        <input type="number" id="winAmount" placeholder="Сумма в ПТ">
+                        <button onclick="addWinAdmin()">➕ Добавить</button>
+                    </div>
+                    <div id="winsListAdmin"></div>
+                </div>
+            </div>
+        </div>
+
         <script>
             let currentUser = null;
+            let adminCode = '132547';
 
-            // Загрузка данных пользователя
             function loadUserData() {
                 fetch('/api/user')
                     .then(res => res.json())
@@ -225,7 +496,6 @@ def home():
                     });
             }
 
-            // Показ раздела
             function showSection(section) {
                 document.querySelectorAll('.content').forEach(el => el.classList.remove('active'));
                 document.querySelectorAll('.main-menu button').forEach(el => el.classList.remove('active'));
@@ -238,58 +508,125 @@ def home():
                 if (section === 'wins') renderWins();
             }
 
-            // === ПРОФИЛЬ ===
             function renderProfile() {
                 if (!currentUser) return;
                 const section = document.getElementById('profile-section');
+                const frame = currentUser.frame || '🖼';
+                const avatar = currentUser.avatar || '👤';
+                const rank = currentUser.rank || '';
+                
                 section.innerHTML = `
                     <div style="text-align: center;">
-                        <div style="font-size: 60px; margin-bottom: 10px;">👤</div>
-                        <h2 style="font-size: 32px; margin-bottom: 5px;">${currentUser.name}</h2>
+                        <div class="profile-frame" style="border-color: ${currentUser.frame_color || '#f5576c'}">
+                            <div class="profile-avatar">${avatar}</div>
+                        </div>
+                        ${rank ? `<div class="profile-rank">${rank}</div>` : ''}
+                        <h2 style="font-size: 28px; margin: 10px 0;">${currentUser.name}</h2>
                         <p style="opacity: 0.6; margin-bottom: 20px;">${currentUser.telegram}</p>
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px; max-width: 600px; margin: 0 auto;">
-                            <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px;">
-                                <div style="font-size: 28px; font-weight: bold; color: #f5576c;">${currentUser.points || 0}</div>
-                                <div style="opacity: 0.5; font-size: 14px;">PT Баллов</div>
+                        <div class="profile-info">
+                            <div class="profile-card">
+                                <div class="value" style="color: #f5576c;">${currentUser.points || 0}</div>
+                                <div class="label">💰 ПТ Баллов</div>
                             </div>
-                            <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px;">
-                                <div style="font-size: 28px; font-weight: bold; color: #4ecdc4;">${currentUser.wins_count || 0}</div>
-                                <div style="opacity: 0.5; font-size: 14px;">Побед</div>
+                            <div class="profile-card">
+                                <div class="value" style="color: #4ecdc4;">${currentUser.wins_count || 0}</div>
+                                <div class="label">🏆 Побед</div>
                             </div>
-                            <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px;">
-                                <div style="font-size: 28px; font-weight: bold; color: #ffe66d;">${currentUser.telegram}</div>
-                                <div style="opacity: 0.5; font-size: 14px;">Telegram</div>
+                            <div class="profile-card">
+                                <div class="value" style="color: #ffe66d; font-size: 20px;">${currentUser.rank || 'Нет звания'}</div>
+                                <div class="label">⭐ Звание</div>
                             </div>
                         </div>
-                        <div style="margin-top: 30px; opacity: 0.3; font-size: 12px;">
+                        <div style="margin-top: 20px; opacity: 0.3; font-size: 12px;">
                             IP: ${currentUser.ip} • Зарегистрирован: ${new Date(currentUser.registered_at).toLocaleDateString()}
                         </div>
                     </div>
                 `;
             }
 
-            // === МАГАЗИН ===
             function renderShop() {
                 const section = document.getElementById('shop-section');
                 fetch('/api/shop')
                     .then(res => res.json())
                     .then(data => {
-                        let itemsHtml = data.items.map(item => `
-                            <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px; text-align: center;">
-                                <div style="font-size: 40px;">${item.icon}</div>
-                                <h3 style="margin: 10px 0;">${item.name}</h3>
-                                <p style="color: #f5576c; font-weight: bold;">${item.price} PT</p>
-                                <button onclick="buyItem(${item.id})" style="margin-top: 10px; padding: 10px 30px; background: rgba(245,87,108,0.3); border: 1px solid rgba(245,87,108,0.3); border-radius: 50px; color: white; cursor: pointer; transition: all 0.3s;">
-                                    Купить
-                                </button>
-                            </div>
-                        `).join('');
+                        const itemsByCategory = {
+                            rank: data.items.filter(i => i.category === 'rank'),
+                            frame: data.items.filter(i => i.category === 'frame'),
+                            avatar: data.items.filter(i => i.category === 'avatar')
+                        };
+                        
+                        let html = `
+                            <h2 style="margin-bottom: 20px;">🛒 Магазин</h2>
+                            <p style="opacity: 0.6; margin-bottom: 20px;">Ваши баллы: <strong style="color: #f5576c;">${currentUser ? currentUser.points || 0 : 0} ПТ</strong></p>
+                        `;
+
+                        for (const [category, items] of Object.entries(itemsByCategory)) {
+                            if (items.length === 0) continue;
+                            const categoryNames = { rank: '⭐ Звания', frame: '🖼 Рамки', avatar: '🎨 Аватарки' };
+                            html += `<h3 style="margin: 20px 0 10px 0;">${categoryNames[category] || category}</h3><div class="shop-grid">`;
+                            items.forEach(item => {
+                                const owned = currentUser && currentUser.purchases && currentUser.purchases.some(p => p.item_id === item.id);
+                                html += `
+                                    <div class="shop-item">
+                                        <div class="icon">${item.icon}</div>
+                                        <div class="name">${item.name}</div>
+                                        <div class="category-badge">${category}</div>
+                                        <div class="price">${item.price} ПТ</div>
+                                        ${owned ? '<div class="owned">✅ Куплено</div>' : `<button onclick="buyItem(${item.id})">Купить</button>`}
+                                    </div>
+                                `;
+                            });
+                            html += `</div>`;
+                        }
+                        
+                        section.innerHTML = html;
+                    });
+            }
+
+            function renderWins() {
+                const section = document.getElementById('wins-section');
+                fetch('/api/wins')
+                    .then(res => res.json())
+                    .then(data => {
+                        const recentWins = data.wins.slice(-10).reverse();
+                        const topWins = [...data.wins].sort((a, b) => b.amount - a.amount).slice(0, 10);
 
                         section.innerHTML = `
-                            <h2 style="margin-bottom: 20px;">🛒 Магазин</h2>
-                            <p style="opacity: 0.6; margin-bottom: 20px;">Ваши баллы: <strong style="color: #f5576c;">${currentUser ? currentUser.points || 0 : 0} PT</strong></p>
-                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
-                                ${itemsHtml}
+                            <h2 style="margin-bottom: 20px;">🎰 Розыгрыши</h2>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+                                <div>
+                                    <h3 style="margin-bottom: 15px;">📋 Недавние выигрыши</h3>
+                                    <div class="wins-list">
+                                        ${recentWins.length === 0 ? '<p style="opacity: 0.3;">Пока нет выигрышей</p>' : recentWins.map(win => `
+                                            <div class="win-item">
+                                                <div>
+                                                    <span class="telegram">${win.telegram}</span>
+                                                    <span class="prize"> - ${win.prize}</span>
+                                                </div>
+                                                <div>
+                                                    <span class="amount">+${win.amount} ПТ</span>
+                                                    <span class="date">${new Date(win.date).toLocaleDateString()}</span>
+                                                </div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3 style="margin-bottom: 15px;">🏆 Топ по сумме ПТ</h3>
+                                    <div class="wins-list">
+                                        ${topWins.length === 0 ? '<p style="opacity: 0.3;">Нет данных</p>' : topWins.map((win, index) => `
+                                            <div class="win-item">
+                                                <div>
+                                                    <span style="opacity: 0.5;">${index + 1}.</span>
+                                                    <span class="telegram">${win.telegram}</span>
+                                                </div>
+                                                <div>
+                                                    <span class="amount">${win.amount} ПТ</span>
+                                                </div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
                             </div>
                         `;
                     });
@@ -313,79 +650,116 @@ def home():
                 });
             }
 
-            // === РОЗЫГРЫШИ ===
-            function renderWins() {
-                const section = document.getElementById('wins-section');
-                fetch('/api/wins')
+            function showAdminPanel() {
+                document.getElementById('adminModal').classList.add('active');
+                document.getElementById('adminContent').style.display = 'none';
+                document.getElementById('adminCode').value = '';
+            }
+
+            function closeAdminPanel() {
+                document.getElementById('adminModal').classList.remove('active');
+            }
+
+            function checkAdminCode() {
+                const code = document.getElementById('adminCode').value;
+                if (code === adminCode) {
+                    document.getElementById('adminContent').style.display = 'block';
+                    loadAdminShop();
+                    loadAdminWins();
+                } else {
+                    alert('❌ Неверный код доступа!');
+                }
+            }
+
+            function loadAdminShop() {
+                fetch('/api/shop')
                     .then(res => res.json())
                     .then(data => {
-                        const recentWins = data.wins.slice(-10).reverse();
-                        const topWins = [...data.wins].sort((a, b) => b.amount - a.amount).slice(0, 10);
-
-                        section.innerHTML = `
-                            <h2 style="margin-bottom: 20px;">🎰 Розыгрыши</h2>
-                            
-                            <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px; margin-bottom: 30px;">
-                                <h3 style="margin-bottom: 15px;">➕ Добавить результат</h3>
-                                <form onsubmit="addWin(event)" style="display: flex; flex-wrap: wrap; gap: 15px; align-items: end;">
-                                    <div style="flex: 1; min-width: 150px;">
-                                        <label style="display: block; font-size: 12px; opacity: 0.5; margin-bottom: 5px;">Telegram ник</label>
-                                        <input type="text" id="win-telegram" placeholder="@username" style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: white; outline: none;">
-                                    </div>
-                                    <div style="flex: 1; min-width: 150px;">
-                                        <label style="display: block; font-size: 12px; opacity: 0.5; margin-bottom: 5px;">Что выиграл</label>
-                                        <input type="text" id="win-prize" placeholder="Например: 1000 PT" style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: white; outline: none;">
-                                    </div>
-                                    <div style="flex: 1; min-width: 150px;">
-                                        <label style="display: block; font-size: 12px; opacity: 0.5; margin-bottom: 5px;">Сумма в PT</label>
-                                        <input type="number" id="win-amount" placeholder="0" style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: white; outline: none;">
-                                    </div>
-                                    <button type="submit" style="padding: 12px 30px; background: rgba(245,87,108,0.3); border: 1px solid rgba(245,87,108,0.3); border-radius: 10px; color: white; cursor: pointer; transition: all 0.3s;">
-                                        Добавить
-                                    </button>
-                                </form>
+                        const list = document.getElementById('shopItemsList');
+                        list.innerHTML = data.items.map(item => `
+                            <div style="display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                <span>${item.icon} ${item.name} - ${item.price} ПТ (${item.category})</span>
+                                <button onclick="deleteShopItem(${item.id})" style="background: rgba(255,0,0,0.2); border: none; color: white; padding: 5px 15px; border-radius: 5px; cursor: pointer;">🗑</button>
                             </div>
-
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
-                                <div>
-                                    <h3 style="margin-bottom: 15px;">📋 Недавние выигрыши</h3>
-                                    <div style="max-height: 300px; overflow-y: auto;">
-                                        ${recentWins.length === 0 ? '<p style="opacity: 0.3;">Пока нет выигрышей</p>' : recentWins.map(win => `
-                                            <div style="display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05);">
-                                                <span><strong style="color: #4ecdc4;">${win.telegram}</strong> - ${win.prize}</span>
-                                                <span style="color: #f5576c;">+${win.amount} PT</span>
-                                            </div>
-                                        `).join('')}
-                                    </div>
-                                </div>
-                                <div>
-                                    <h3 style="margin-bottom: 15px;">🏆 Топ по сумме PT</h3>
-                                    <div style="max-height: 300px; overflow-y: auto;">
-                                        ${topWins.length === 0 ? '<p style="opacity: 0.3;">Нет данных</p>' : topWins.map((win, index) => `
-                                            <div style="display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05);">
-                                                <span>${index + 1}. <strong style="color: #ffe66d;">${win.telegram}</strong></span>
-                                                <span style="color: #f5576c;">${win.amount} PT</span>
-                                            </div>
-                                        `).join('')}
-                                    </div>
-                                </div>
-                            </div>
-                        `;
+                        `).join('');
                     });
             }
 
-            function addWin(event) {
-                event.preventDefault();
-                const telegram = document.getElementById('win-telegram').value.trim();
-                const prize = document.getElementById('win-prize').value.trim();
-                const amount = parseInt(document.getElementById('win-amount').value);
+            function addShopItem() {
+                const name = document.getElementById('itemName').value;
+                const price = parseInt(document.getElementById('itemPrice').value);
+                const category = document.getElementById('itemCategory').value;
+                const icon = document.getElementById('itemIcon').value;
+
+                if (!name || !price || !icon) {
+                    alert('Заполните все поля!');
+                    return;
+                }
+
+                fetch('/api/admin/shop/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, price, category, icon })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('✅ Товар добавлен!');
+                        document.getElementById('itemName').value = '';
+                        document.getElementById('itemPrice').value = '';
+                        document.getElementById('itemIcon').value = '';
+                        loadAdminShop();
+                        renderShop();
+                    } else {
+                        alert('❌ ' + data.message);
+                    }
+                });
+            }
+
+            function deleteShopItem(itemId) {
+                if (!confirm('Удалить товар?')) return;
+                fetch('/api/admin/shop/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ item_id: itemId })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('✅ Товар удален!');
+                        loadAdminShop();
+                        renderShop();
+                    } else {
+                        alert('❌ ' + data.message);
+                    }
+                });
+            }
+
+            function loadAdminWins() {
+                fetch('/api/wins')
+                    .then(res => res.json())
+                    .then(data => {
+                        const list = document.getElementById('winsListAdmin');
+                        list.innerHTML = data.wins.slice().reverse().slice(0, 20).map(win => `
+                            <div style="display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                <span>${win.telegram} - ${win.prize} (+${win.amount} ПТ)</span>
+                                <button onclick="deleteWin(${win.id})" style="background: rgba(255,0,0,0.2); border: none; color: white; padding: 5px 15px; border-radius: 5px; cursor: pointer;">🗑</button>
+                            </div>
+                        `).join('');
+                    });
+            }
+
+            function addWinAdmin() {
+                const telegram = document.getElementById('winTelegram').value;
+                const prize = document.getElementById('winPrize').value;
+                const amount = parseInt(document.getElementById('winAmount').value);
 
                 if (!telegram || !prize || !amount) {
                     alert('Заполните все поля!');
                     return;
                 }
 
-                fetch('/api/add_win', {
+                fetch('/api/admin/win/add', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ telegram, prize, amount })
@@ -393,10 +767,31 @@ def home():
                 .then(res => res.json())
                 .then(data => {
                     if (data.success) {
-                        alert('✅ ' + data.message);
-                        document.getElementById('win-telegram').value = '';
-                        document.getElementById('win-prize').value = '';
-                        document.getElementById('win-amount').value = '';
+                        alert('✅ Выигрыш добавлен!');
+                        document.getElementById('winTelegram').value = '';
+                        document.getElementById('winPrize').value = '';
+                        document.getElementById('winAmount').value = '';
+                        loadAdminWins();
+                        renderWins();
+                        loadUserData();
+                    } else {
+                        alert('❌ ' + data.message);
+                    }
+                });
+            }
+
+            function deleteWin(winId) {
+                if (!confirm('Удалить выигрыш?')) return;
+                fetch('/api/admin/win/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ win_id: winId })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('✅ Выигрыш удален!');
+                        loadAdminWins();
                         renderWins();
                         loadUserData();
                     } else {
@@ -410,7 +805,6 @@ def home():
                     .then(() => window.location.href = '/');
             }
 
-            // Инициализация
             loadUserData();
             showSection('profile');
         </script>
@@ -441,7 +835,12 @@ def api_user():
             'points': user.get('points', 0),
             'wins_count': len(user_wins),
             'ip': user['ip'],
-            'registered_at': user['registered_at']
+            'registered_at': user['registered_at'],
+            'rank': user.get('rank', ''),
+            'frame': user.get('frame', '🖼'),
+            'frame_color': user.get('frame_color', '#f5576c'),
+            'avatar': user.get('avatar', '👤'),
+            'purchases': user.get('purchases', [])
         }
     })
 
@@ -466,15 +865,34 @@ def api_buy():
     if not user:
         return jsonify({'success': False, 'message': 'Пользователь не найден'})
     
+    # Проверка что не куплено уже
+    if 'purchases' in user:
+        for p in user['purchases']:
+            if p.get('item_id') == item_id:
+                return jsonify({'success': False, 'message': 'У вас уже есть этот предмет!'})
+    
     if user.get('points', 0) < item['price']:
-        return jsonify({'success': False, 'message': f'Недостаточно баллов! Нужно {item["price"]} PT'})
+        return jsonify({'success': False, 'message': f'Недостаточно баллов! Нужно {item["price"]} ПТ'})
     
     user['points'] = user.get('points', 0) - item['price']
-    user['purchases'] = user.get('purchases', []) + [{
-        'item': item['name'],
+    if 'purchases' not in user:
+        user['purchases'] = []
+    user['purchases'].append({
+        'item_id': item['id'],
+        'item_name': item['name'],
+        'category': item['category'],
         'price': item['price'],
         'date': datetime.now().isoformat()
-    }]
+    })
+    
+    # Применяем эффект товара
+    if item['category'] == 'rank':
+        user['rank'] = item['name']
+    elif item['category'] == 'frame':
+        user['frame'] = item['icon']
+        user['frame_color'] = '#ffd700' if 'Золотая' in item['name'] else '#c0c0c0' if 'Серебряная' in item['name'] else '#cd7f32' if 'Бронзовая' in item['name'] else '#00ffff' if 'Алмазная' in item['name'] else '#f5576c'
+    elif item['category'] == 'avatar':
+        user['avatar'] = item['icon']
     
     save_users(users)
     return jsonify({'success': True, 'message': f'Вы купили {item["name"]}!'})
@@ -484,9 +902,37 @@ def api_wins():
     wins = load_wins()
     return jsonify(wins)
 
-@app.route('/api/add_win', methods=['POST'])
+# === АДМИН API ===
+
+@app.route('/api/admin/shop/add', methods=['POST'])
 @login_required
-def api_add_win():
+def admin_add_shop():
+    data = request.get_json()
+    shop = load_shop()
+    
+    new_id = max([i['id'] for i in shop['items']]) + 1 if shop['items'] else 1
+    shop['items'].append({
+        'id': new_id,
+        'name': data['name'],
+        'price': data['price'],
+        'category': data['category'],
+        'icon': data['icon']
+    })
+    save_shop(shop)
+    return jsonify({'success': True, 'message': 'Товар добавлен'})
+
+@app.route('/api/admin/shop/delete', methods=['POST'])
+@login_required
+def admin_delete_shop():
+    data = request.get_json()
+    shop = load_shop()
+    shop['items'] = [i for i in shop['items'] if i['id'] != data['item_id']]
+    save_shop(shop)
+    return jsonify({'success': True, 'message': 'Товар удален'})
+
+@app.route('/api/admin/win/add', methods=['POST'])
+@login_required
+def admin_add_win():
     data = request.get_json()
     telegram = data.get('telegram', '').strip()
     prize = data.get('prize', '').strip()
@@ -524,6 +970,29 @@ def api_add_win():
     
     return jsonify({'success': True, 'message': 'Выигрыш добавлен!'})
 
+@app.route('/api/admin/win/delete', methods=['POST'])
+@login_required
+def admin_delete_win():
+    data = request.get_json()
+    win_id = data.get('win_id')
+    
+    wins = load_wins()
+    win_to_delete = next((w for w in wins['wins'] if w['id'] == win_id), None)
+    if win_to_delete:
+        # Возвращаем баллы
+        users = load_users()
+        for user_id, user in users.items():
+            if user['telegram'] == win_to_delete['telegram']:
+                user['points'] = user.get('points', 0) - win_to_delete['amount']
+                if user['points'] < 0:
+                    user['points'] = 0
+                save_users(users)
+                break
+    
+    wins['wins'] = [w for w in wins['wins'] if w['id'] != win_id]
+    save_wins(wins)
+    return jsonify({'success': True, 'message': 'Выигрыш удален'})
+
 @app.route('/register', methods=['POST'])
 def register():
     try:
@@ -559,10 +1028,14 @@ def register():
             'telegram': telegram,
             'password_hash': hash_password(password),
             'ip': client_ip,
-            'points': 100,  # Начальный бонус
+            'points': 100,
             'registered_at': datetime.now().isoformat(),
             'last_login': datetime.now().isoformat(),
-            'purchases': []
+            'purchases': [],
+            'rank': '',
+            'frame': '🖼',
+            'frame_color': '#f5576c',
+            'avatar': '👤'
         }
         
         save_users(users)
@@ -571,7 +1044,7 @@ def register():
         
         return jsonify({
             'success': True,
-            'message': f'Добро пожаловать, {name}! Вы получили 100 PT бонуса!',
+            'message': f'Добро пожаловать, {name}! Вы получили 100 ПТ бонуса!',
             'redirect': '/'
         })
         
@@ -595,11 +1068,13 @@ def background():
         
         img = Image.new('RGB', (1920, 1080), color=(15, 12, 41))
         draw = ImageDraw.Draw(img)
-        for i in range(0, 1080, 20):
-            draw.rectangle([0, i, 1920, i+10], fill=(48, 43, 99))
+        for i in range(0, 1080, 30):
+            draw.rectangle([0, i, 1920, i+15], fill=(48, 43, 99))
+        for i in range(0, 1920, 40):
+            draw.rectangle([i, 0, i+20, 1080], fill=(48, 43, 99, 50))
         
         img_io = io.BytesIO()
-        img.save(img_io, 'JPEG')
+        img.save(img_io, 'JPEG', quality=85)
         img_io.seek(0)
         return Response(img_io.getvalue(), mimetype='image/jpeg')
 
