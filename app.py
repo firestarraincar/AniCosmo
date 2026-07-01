@@ -179,25 +179,42 @@ def home():
             .welcome-screen .channel-block a:hover {
                 color: #ff8a8a;
             }
-            .btn-start {
-                padding: 16px 60px;
-                font-size: 20px;
+            .welcome-screen .buttons {
+                display: flex;
+                gap: 15px;
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+            .btn-start, .btn-login {
+                padding: 16px 40px;
+                font-size: 18px;
                 font-weight: 500;
-                letter-spacing: 3px;
+                letter-spacing: 2px;
                 color: white;
-                background: rgba(255, 255, 255, 0.08);
-                border: 2px solid rgba(255, 255, 255, 0.25);
                 border-radius: 50px;
                 cursor: pointer;
                 transition: all 0.4s;
                 text-transform: uppercase;
                 backdrop-filter: blur(4px);
             }
+            .btn-start {
+                background: rgba(255, 255, 255, 0.08);
+                border: 2px solid rgba(255, 255, 255, 0.25);
+            }
             .btn-start:hover {
                 background: rgba(255, 255, 255, 0.15);
                 border-color: rgba(255, 255, 255, 0.5);
                 transform: scale(1.03);
                 box-shadow: 0 0 40px rgba(255, 255, 255, 0.05);
+            }
+            .btn-login {
+                background: rgba(245, 87, 108, 0.2);
+                border: 2px solid rgba(245, 87, 108, 0.3);
+            }
+            .btn-login:hover {
+                background: rgba(245, 87, 108, 0.3);
+                border-color: rgba(245, 87, 108, 0.5);
+                transform: scale(1.03);
             }
             .footer {
                 position: fixed;
@@ -222,7 +239,10 @@ def home():
                 <div class="label">Канал</div>
                 <a href="https://t.me/AniCosmoDay" target="_blank">@AniCosmoDay</a>
             </div>
-            <button class="btn-start" onclick="window.location.href='/register-page'">Начать</button>
+            <div class="buttons">
+                <button class="btn-start" onclick="window.location.href='/register-page'">Регистрация</button>
+                <button class="btn-login" onclick="window.location.href='/login-page'">Вход</button>
+            </div>
         </div>
         
         <div class="footer">ANICOSMO</div>
@@ -508,7 +528,257 @@ def register_page():
     </html>
     '''
 
-# === СТРАНИЦА 3: ОСНОВНОЕ ПРИЛОЖЕНИЕ ===
+# === СТРАНИЦА 3: ВХОД ===
+
+@app.route('/login-page')
+def login_page():
+    if 'user_id' in session:
+        return redirect_to_app()
+    
+    return '''
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Вход - AniCosmo</title>
+        <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body {
+                font-family: 'Segoe UI', Arial, sans-serif;
+                height: 100vh;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                background-image: url('/background');
+                background-size: cover;
+                background-position: center;
+                background-repeat: no-repeat;
+                color: white;
+                position: relative;
+            }
+            .overlay {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.65);
+                z-index: 1;
+            }
+            .login-box {
+                position: relative;
+                z-index: 10;
+                background: rgba(0, 0, 0, 0.6);
+                backdrop-filter: blur(20px);
+                padding: 50px;
+                border-radius: 20px;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                max-width: 450px;
+                width: 100%;
+                text-align: center;
+                box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+                animation: fadeIn 0.8s ease;
+            }
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(20px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            .login-box h2 {
+                font-size: 32px;
+                font-weight: 300;
+                letter-spacing: 2px;
+                margin-bottom: 30px;
+                color: white;
+            }
+            .login-box .input-group {
+                margin-bottom: 20px;
+                text-align: left;
+            }
+            .login-box .input-group label {
+                display: block;
+                font-size: 13px;
+                text-transform: uppercase;
+                letter-spacing: 2px;
+                opacity: 0.6;
+                margin-bottom: 8px;
+            }
+            .login-box .input-group input {
+                width: 100%;
+                padding: 14px 18px;
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid rgba(255, 255, 255, 0.15);
+                border-radius: 12px;
+                color: white;
+                font-size: 16px;
+                transition: all 0.3s;
+                outline: none;
+            }
+            .login-box .input-group input:focus {
+                border-color: rgba(255, 107, 107, 0.5);
+                background: rgba(255, 255, 255, 0.08);
+                box-shadow: 0 0 30px rgba(255, 107, 107, 0.05);
+            }
+            .login-box .input-group input::placeholder {
+                color: rgba(255, 255, 255, 0.2);
+            }
+            .login-box .btn-login {
+                width: 100%;
+                padding: 16px;
+                font-size: 18px;
+                font-weight: 500;
+                letter-spacing: 2px;
+                color: white;
+                background: rgba(255, 107, 107, 0.3);
+                border: 1px solid rgba(255, 107, 107, 0.3);
+                border-radius: 12px;
+                cursor: pointer;
+                transition: all 0.4s;
+                text-transform: uppercase;
+                margin-top: 10px;
+            }
+            .login-box .btn-login:hover {
+                background: rgba(255, 107, 107, 0.5);
+                border-color: rgba(255, 107, 107, 0.6);
+                transform: scale(1.02);
+            }
+            .login-box .btn-login:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
+            .btn-back {
+                margin-top: 20px;
+                padding: 10px 30px;
+                font-size: 14px;
+                font-weight: 400;
+                letter-spacing: 2px;
+                color: rgba(255,255,255,0.4);
+                background: transparent;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 50px;
+                cursor: pointer;
+                transition: all 0.4s;
+                text-transform: uppercase;
+            }
+            .btn-back:hover {
+                border-color: rgba(255, 255, 255, 0.3);
+                color: white;
+            }
+            .message {
+                margin-top: 15px;
+                padding: 12px;
+                border-radius: 10px;
+                font-size: 14px;
+                display: none;
+            }
+            .message.error {
+                display: block;
+                background: rgba(255, 0, 0, 0.2);
+                border: 1px solid rgba(255, 0, 0, 0.3);
+                color: #ff6b6b;
+            }
+            .message.success {
+                display: block;
+                background: rgba(0, 255, 0, 0.1);
+                border: 1px solid rgba(0, 255, 0, 0.2);
+                color: #69db7c;
+            }
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                25% { transform: translateX(-10px); }
+                75% { transform: translateX(10px); }
+            }
+            .shake {
+                animation: shake 0.5s ease;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="overlay"></div>
+        
+        <div class="login-box">
+            <h2>🔐 Вход</h2>
+            <form id="loginForm" onsubmit="login(event)">
+                <div class="input-group">
+                    <label>Telegram ник</label>
+                    <input type="text" id="telegram" placeholder="@username" required>
+                </div>
+                <div class="input-group">
+                    <label>Пароль</label>
+                    <input type="password" id="password" placeholder="••••••••" required>
+                </div>
+                <div id="message" class="message"></div>
+                <button type="submit" class="btn-login" id="loginBtn">Войти</button>
+            </form>
+            <button class="btn-back" onclick="window.location.href='/'">← Назад</button>
+        </div>
+
+        <script>
+            function login(event) {
+                event.preventDefault();
+
+                const telegram = document.getElementById('telegram').value.trim();
+                const password = document.getElementById('password').value;
+                const messageEl = document.getElementById('message');
+                const btn = document.getElementById('loginBtn');
+
+                if (!telegram.startsWith('@') || telegram.length < 3) {
+                    showMessage('Telegram ник должен начинаться с @', 'error');
+                    document.getElementById('telegram').classList.add('shake');
+                    setTimeout(() => document.getElementById('telegram').classList.remove('shake'), 500);
+                    return;
+                }
+
+                if (!password || password.length < 6) {
+                    showMessage('Введите пароль', 'error');
+                    document.getElementById('password').classList.add('shake');
+                    setTimeout(() => document.getElementById('password').classList.remove('shake'), 500);
+                    return;
+                }
+
+                btn.disabled = true;
+                btn.textContent = 'Вход...';
+
+                fetch('/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ telegram, password })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        showMessage('✅ ' + data.message, 'success');
+                        btn.textContent = 'Успешно!';
+                        setTimeout(() => {
+                            window.location.href = '/app';
+                        }, 1000);
+                    } else {
+                        showMessage('❌ ' + data.message, 'error');
+                        btn.disabled = false;
+                        btn.textContent = 'Войти';
+                        document.querySelector('.login-box').classList.add('shake');
+                        setTimeout(() => document.querySelector('.login-box').classList.remove('shake'), 500);
+                    }
+                })
+                .catch(error => {
+                    showMessage('Ошибка соединения с сервером', 'error');
+                    btn.disabled = false;
+                    btn.textContent = 'Войти';
+                });
+            }
+
+            function showMessage(text, type) {
+                const el = document.getElementById('message');
+                el.textContent = text;
+                el.className = 'message ' + type;
+            }
+        </script>
+    </body>
+    </html>
+    '''
+
+# === СТРАНИЦА 4: ОСНОВНОЕ ПРИЛОЖЕНИЕ ===
 
 def redirect_to_app():
     return '<script>window.location.href="/app"</script>'
@@ -520,15 +790,20 @@ def redirect_to_home():
 def app_page():
     if 'user_id' not in session:
         return redirect_to_home()
-    return '''
+    
+    users = load_users()
+    user = users.get(session['user_id'])
+    is_admin = user.get('is_admin', False) if user else False
+    
+    return f'''
     <!DOCTYPE html>
     <html>
     <head>
         <meta charset="UTF-8">
         <title>AniCosmo</title>
         <style>
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            body {
+            * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+            body {{
                 font-family: 'Segoe UI', Arial, sans-serif;
                 min-height: 100vh;
                 background-image: url('/background');
@@ -538,8 +813,8 @@ def app_page():
                 color: white;
                 padding: 20px;
                 position: relative;
-            }
-            .overlay {
+            }}
+            .overlay {{
                 position: fixed;
                 top: 0;
                 left: 0;
@@ -547,49 +822,49 @@ def app_page():
                 height: 100%;
                 background: rgba(0, 0, 0, 0.6);
                 z-index: 0;
-            }
-            .container {
+            }}
+            .container {{
                 max-width: 1200px;
                 width: 100%;
                 margin: 0 auto;
                 position: relative;
                 z-index: 1;
-            }
-            .header {
+            }}
+            .header {{
                 text-align: center;
                 margin-bottom: 30px;
                 padding: 20px;
                 background: rgba(0,0,0,0.3);
                 border-radius: 20px;
                 backdrop-filter: blur(10px);
-            }
-            .header h1 {
+            }}
+            .header h1 {{
                 font-size: 48px;
                 font-weight: 700;
                 background: linear-gradient(135deg, #f093fb, #f5576c);
                 -webkit-background-clip: text;
                 -webkit-text-fill-color: transparent;
                 margin-bottom: 5px;
-            }
-            .header .subtitle {
+            }}
+            .header .subtitle {{
                 opacity: 0.6;
                 font-size: 16px;
                 letter-spacing: 2px;
-            }
-            .header .user-controls {
+            }}
+            .header .user-controls {{
                 margin-top: 15px;
                 display: flex;
                 justify-content: center;
                 align-items: center;
                 gap: 15px;
                 flex-wrap: wrap;
-            }
-            .header .user-controls a {
+            }}
+            .header .user-controls a {{
                 color: #f5576c;
                 text-decoration: none;
                 font-size: 18px;
-            }
-            .btn-logout {
+            }}
+            .btn-logout {{
                 padding: 8px 25px;
                 background: rgba(255,107,107,0.2);
                 border: 1px solid rgba(255,107,107,0.2);
@@ -598,18 +873,18 @@ def app_page():
                 cursor: pointer;
                 font-size: 14px;
                 transition: all 0.3s;
-            }
-            .btn-logout:hover {
+            }}
+            .btn-logout:hover {{
                 background: rgba(255,107,107,0.3);
-            }
-            .main-menu {
+            }}
+            .main-menu {{
                 display: flex;
                 justify-content: center;
                 gap: 15px;
                 flex-wrap: wrap;
                 margin-bottom: 30px;
-            }
-            .main-menu button {
+            }}
+            .main-menu button {{
                 padding: 12px 30px;
                 font-size: 16px;
                 border: 2px solid rgba(255,255,255,0.1);
@@ -621,17 +896,17 @@ def app_page():
                 backdrop-filter: blur(10px);
                 font-weight: 500;
                 letter-spacing: 1px;
-            }
-            .main-menu button:hover {
+            }}
+            .main-menu button:hover {{
                 background: rgba(255,255,255,0.1);
                 border-color: #f5576c;
                 transform: translateY(-2px);
-            }
-            .main-menu button.active {
+            }}
+            .main-menu button.active {{
                 background: rgba(245, 87, 108, 0.2);
                 border-color: #f5576c;
-            }
-            .content {
+            }}
+            .content {{
                 background: rgba(0,0,0,0.4);
                 backdrop-filter: blur(20px);
                 border-radius: 20px;
@@ -639,52 +914,52 @@ def app_page():
                 border: 1px solid rgba(255,255,255,0.05);
                 min-height: 400px;
                 display: none;
-            }
-            .content.active {
+            }}
+            .content.active {{
                 display: block;
-            }
-            .footer {
+            }}
+            .footer {{
                 text-align: center;
                 margin-top: 30px;
                 opacity: 0.3;
                 font-size: 13px;
                 letter-spacing: 3px;
-            }
-            .shop-grid {
+            }}
+            .shop-grid {{
                 display: grid;
                 grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
                 gap: 20px;
                 margin-top: 20px;
-            }
-            .shop-item {
+            }}
+            .shop-item {{
                 background: rgba(255,255,255,0.05);
                 padding: 20px;
                 border-radius: 15px;
                 text-align: center;
                 transition: all 0.3s;
-            }
-            .shop-item:hover {
+            }}
+            .shop-item:hover {{
                 transform: translateY(-5px);
                 background: rgba(255,255,255,0.08);
-            }
-            .shop-item .icon {
+            }}
+            .shop-item .icon {{
                 font-size: 40px;
-            }
-            .shop-item .name {
+            }}
+            .shop-item .name {{
                 margin: 10px 0;
                 font-weight: 500;
-            }
-            .shop-item .price {
+            }}
+            .shop-item .price {{
                 color: #f5576c;
                 font-weight: bold;
-            }
-            .shop-item .category-badge {
+            }}
+            .shop-item .category-badge {{
                 font-size: 11px;
                 opacity: 0.5;
                 text-transform: uppercase;
                 letter-spacing: 1px;
-            }
-            .shop-item button {
+            }}
+            .shop-item button {{
                 margin-top: 10px;
                 padding: 8px 25px;
                 background: rgba(245,87,108,0.3);
@@ -693,74 +968,75 @@ def app_page():
                 color: white;
                 cursor: pointer;
                 transition: all 0.3s;
-            }
-            .shop-item button:hover {
+            }}
+            .shop-item button:hover {{
                 background: rgba(245,87,108,0.5);
-            }
-            .shop-item .owned {
+            }}
+            .shop-item .owned {{
                 color: #4ecdc4;
                 font-size: 14px;
                 margin-top: 5px;
-            }
-            .wins-list {
+            }}
+            .wins-list {{
                 max-height: 400px;
                 overflow-y: auto;
-            }
-            .win-item {
+            }}
+            .win-item {{
                 display: flex;
                 justify-content: space-between;
                 padding: 12px;
                 border-bottom: 1px solid rgba(255,255,255,0.05);
                 align-items: center;
-            }
-            .win-item .telegram { color: #4ecdc4; font-weight: bold; }
-            .win-item .amount { color: #f5576c; font-weight: bold; }
-            .win-item .prize { opacity: 0.7; }
-            .win-item .date { opacity: 0.3; font-size: 12px; }
-            .profile-info {
+            }}
+            .win-item .telegram {{ color: #4ecdc4; font-weight: bold; cursor: pointer; }}
+            .win-item .telegram:hover {{ text-decoration: underline; }}
+            .win-item .amount {{ color: #f5576c; font-weight: bold; }}
+            .win-item .prize {{ opacity: 0.7; }}
+            .win-item .date {{ opacity: 0.3; font-size: 12px; }}
+            .profile-info {{
                 display: grid;
                 grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
                 gap: 20px;
                 max-width: 800px;
                 margin: 0 auto;
-            }
-            .profile-card {
+            }}
+            .profile-card {{
                 background: rgba(255,255,255,0.05);
                 padding: 25px;
                 border-radius: 15px;
                 text-align: center;
                 cursor: pointer;
                 transition: all 0.3s;
-            }
-            .profile-card:hover {
+            }}
+            .profile-card:hover {{
                 background: rgba(255,255,255,0.1);
                 transform: scale(1.02);
-            }
-            .profile-card .value {
+            }}
+            .profile-card .value {{
                 font-size: 32px;
                 font-weight: bold;
                 margin: 10px 0;
-            }
-            .profile-card .label {
+            }}
+            .profile-card .label {{
                 opacity: 0.5;
                 font-size: 14px;
-            }
-            .profile-avatar {
+            }}
+            .profile-avatar {{
                 font-size: 80px;
                 text-align: center;
                 margin-bottom: 20px;
-            }
-            .profile-frame {
+            }}
+            .profile-frame {{
                 border: 3px solid #f5576c;
                 border-radius: 20px;
                 padding: 20px;
                 display: inline-block;
-            }
-            .profile-rank {
+            }}
+            .profile-rank {{
                 font-size: 24px;
                 color: #ffe66d;
-            }
-            .modal {
+            }}
+            .modal {{
                 display: none;
                 position: fixed;
                 top: 0;
@@ -771,11 +1047,11 @@ def app_page():
                 z-index: 1000;
                 justify-content: center;
                 align-items: center;
-            }
-            .modal.active {
+            }}
+            .modal.active {{
                 display: flex;
-            }
-            .modal-content {
+            }}
+            .modal-content {{
                 background: #1a1a2e;
                 padding: 40px;
                 border-radius: 20px;
@@ -783,11 +1059,11 @@ def app_page():
                 width: 90%;
                 max-height: 80vh;
                 overflow-y: auto;
-            }
-            .modal-content h3 {
+            }}
+            .modal-content h3 {{
                 margin-bottom: 20px;
-            }
-            .modal-content input {
+            }}
+            .modal-content input {{
                 width: 100%;
                 padding: 12px;
                 margin: 10px 0;
@@ -796,8 +1072,8 @@ def app_page():
                 border-radius: 10px;
                 color: white;
                 outline: none;
-            }
-            .modal-content button {
+            }}
+            .modal-content button {{
                 padding: 12px 30px;
                 background: rgba(245,87,108,0.3);
                 border: 1px solid rgba(245,87,108,0.3);
@@ -805,34 +1081,34 @@ def app_page():
                 color: white;
                 cursor: pointer;
                 margin: 5px;
-            }
-            .modal-content button:hover {
+            }}
+            .modal-content button:hover {{
                 background: rgba(245,87,108,0.5);
-            }
-            .modal-close {
+            }}
+            .modal-close {{
                 float: right;
                 background: none;
                 border: none;
                 color: white;
                 font-size: 24px;
                 cursor: pointer;
-            }
-            .code-input {
+            }}
+            .code-input {{
                 display: flex;
                 gap: 10px;
                 align-items: center;
                 margin: 10px 0;
-            }
-            .code-input input {
+            }}
+            .code-input input {{
                 flex: 1;
-            }
-            .users-grid {
+            }}
+            .users-grid {{
                 display: grid;
                 grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
                 gap: 15px;
                 margin-top: 20px;
-            }
-            .user-card {
+            }}
+            .user-card {{
                 background: rgba(255,255,255,0.05);
                 padding: 15px;
                 border-radius: 10px;
@@ -841,34 +1117,34 @@ def app_page():
                 align-items: center;
                 cursor: pointer;
                 transition: all 0.3s;
-            }
-            .user-card:hover {
+            }}
+            .user-card:hover {{
                 background: rgba(255,255,255,0.1);
                 transform: scale(1.02);
-            }
-            .user-card .user-info {
+            }}
+            .user-card .user-info {{
                 display: flex;
                 flex-direction: column;
-            }
-            .user-card .user-name {
+            }}
+            .user-card .user-name {{
                 font-weight: bold;
-            }
-            .user-card .user-telegram {
+            }}
+            .user-card .user-telegram {{
                 opacity: 0.5;
                 font-size: 14px;
-            }
-            .user-card .user-stats {
+            }}
+            .user-card .user-stats {{
                 font-size: 12px;
                 opacity: 0.6;
-            }
-            .user-card .admin-badge {
+            }}
+            .user-card .admin-badge {{
                 background: rgba(255,215,0,0.2);
                 color: #ffd700;
                 padding: 2px 10px;
                 border-radius: 10px;
                 font-size: 11px;
-            }
-            .user-card .make-admin-btn {
+            }}
+            .user-card .make-admin-btn {{
                 background: rgba(255,215,0,0.2);
                 border: 1px solid rgba(255,215,0,0.3);
                 color: white;
@@ -876,17 +1152,17 @@ def app_page():
                 border-radius: 10px;
                 cursor: pointer;
                 transition: all 0.3s;
-            }
-            .user-card .make-admin-btn:hover {
+            }}
+            .user-card .make-admin-btn:hover {{
                 background: rgba(255,215,0,0.3);
-            }
-            .avatar-select {
+            }}
+            .avatar-select {{
                 display: grid;
                 grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
                 gap: 10px;
                 margin: 10px 0;
-            }
-            .avatar-option {
+            }}
+            .avatar-option {{
                 font-size: 40px;
                 padding: 10px;
                 background: rgba(255,255,255,0.05);
@@ -895,15 +1171,20 @@ def app_page():
                 cursor: pointer;
                 text-align: center;
                 transition: all 0.3s;
-            }
-            .avatar-option:hover {
+            }}
+            .avatar-option:hover {{
                 background: rgba(255,255,255,0.1);
                 transform: scale(1.1);
-            }
-            .avatar-option.selected {
+            }}
+            .avatar-option.selected {{
                 border-color: #f5576c;
                 background: rgba(245,87,108,0.2);
-            }
+            }}
+            .admin-crown {{
+                color: #ffd700;
+                font-size: 20px;
+                margin-left: 5px;
+            }}
         </style>
     </head>
     <body>
@@ -991,6 +1272,7 @@ def app_page():
         <script>
             let currentUser = null;
             let currentAdminCode = '';
+            let isAdmin = {'{' + f'{is_admin}' + '}'};
 
             function loadUserData() {
                 fetch('/api/user')
@@ -1024,8 +1306,8 @@ def app_page():
                 const section = document.getElementById('profile-section');
                 const avatar = currentUser.avatar || '👤';
                 const rank = currentUser.rank || '';
+                const isAdminUser = currentUser.is_admin || false;
                 
-                // Собираем купленные аватарки
                 const purchasedAvatars = currentUser.purchases ? 
                     currentUser.purchases.filter(p => p.category === 'avatar').map(p => p.icon) : [];
                 
@@ -1037,7 +1319,7 @@ def app_page():
                             <div class="avatar-select">
                                 ${purchasedAvatars.map(a => `
                                     <div class="avatar-option ${currentUser.avatar === a ? 'selected' : ''}" 
-                                         onclick="changeAvatar('${a}')">${a}</div>
+                                         onclick="changeAvatar('{a}')">${a}</div>
                                 `).join('')}
                             </div>
                         </div>
@@ -1050,7 +1332,10 @@ def app_page():
                             <div class="profile-avatar">${avatar}</div>
                         </div>
                         ${rank ? `<div class="profile-rank">${rank}</div>` : ''}
-                        <h2 style="font-size: 28px; margin: 10px 0;">${currentUser.name}</h2>
+                        <h2 style="font-size: 28px; margin: 10px 0;">
+                            ${currentUser.name}
+                            ${isAdminUser ? '<span class="admin-crown">👑</span>' : ''}
+                        </h2>
                         <p style="opacity: 0.6; margin-bottom: 20px;">${currentUser.telegram}</p>
                         ${avatarHtml}
                         <div class="profile-info">
@@ -1069,6 +1354,7 @@ def app_page():
                         </div>
                         <div style="margin-top: 20px; opacity: 0.3; font-size: 12px;">
                             IP: ${currentUser.ip} • Зарегистрирован: ${new Date(currentUser.registered_at).toLocaleDateString()}
+                            ${isAdminUser ? ' • 👑 Администратор' : ''}
                         </div>
                     </div>
                 `;
@@ -1130,6 +1416,23 @@ def app_page():
                     });
             }
 
+            function buyItem(itemId) {
+                fetch('/api/buy', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ item_id: itemId })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('✅ ' + data.message);
+                        loadUserData();
+                    } else {
+                        alert('❌ ' + data.message);
+                    }
+                });
+            }
+
             function renderWins() {
                 const section = document.getElementById('wins-section');
                 fetch('/api/wins')
@@ -1147,7 +1450,7 @@ def app_page():
                                         ${recentWins.length === 0 ? '<p style="opacity: 0.3;">Пока нет выигрышей</p>' : recentWins.map(win => `
                                             <div class="win-item">
                                                 <div>
-                                                    <span class="telegram" onclick="viewUser('${win.telegram}')" style="cursor:pointer;">${win.telegram}</span>
+                                                    <span class="telegram" onclick="viewUser('${win.telegram}')">${win.telegram}</span>
                                                     <span class="prize"> - ${win.prize}</span>
                                                 </div>
                                                 <div>
@@ -1165,7 +1468,7 @@ def app_page():
                                             <div class="win-item">
                                                 <div>
                                                     <span style="opacity: 0.5;">${index + 1}.</span>
-                                                    <span class="telegram" onclick="viewUser('${win.telegram}')" style="cursor:pointer;">${win.telegram}</span>
+                                                    <span class="telegram" onclick="viewUser('${win.telegram}')">${win.telegram}</span>
                                                 </div>
                                                 <div>
                                                     <span class="amount">${win.amount} ПТ</span>
@@ -1194,7 +1497,7 @@ def app_page():
                                             <div class="win-item">
                                                 <div>
                                                     <span style="opacity: 0.5;">${index + 1}.</span>
-                                                    <span onclick="viewUser('${user.telegram}')" style="cursor:pointer; font-weight:bold; color: #ffe66d;">${user.name}</span>
+                                                    <span onclick="viewUser('${user.telegram}')" style="cursor:pointer; font-weight:bold; color: #ffe66d;">${user.name} ${user.is_admin ? '👑' : ''}</span>
                                                     <span style="opacity:0.5;">${user.telegram}</span>
                                                 </div>
                                                 <div>
@@ -1212,7 +1515,7 @@ def app_page():
                                             <div class="win-item">
                                                 <div>
                                                     <span style="opacity: 0.5;">${index + 1}.</span>
-                                                    <span onclick="viewUser('${user.telegram}')" style="cursor:pointer; font-weight:bold; color: #4ecdc4;">${user.name}</span>
+                                                    <span onclick="viewUser('${user.telegram}')" style="cursor:pointer; font-weight:bold; color: #4ecdc4;">${user.name} ${user.is_admin ? '👑' : ''}</span>
                                                     <span style="opacity:0.5;">${user.telegram}</span>
                                                 </div>
                                                 <div>
@@ -1245,7 +1548,10 @@ def app_page():
                                     <div class="profile-avatar">${user.avatar || '👤'}</div>
                                 </div>
                                 ${user.rank ? `<div class="profile-rank">${user.rank}</div>` : ''}
-                                <h2 style="font-size: 28px; margin: 10px 0;">${user.name}</h2>
+                                <h2 style="font-size: 28px; margin: 10px 0;">
+                                    ${user.name}
+                                    ${user.is_admin ? '<span class="admin-crown">👑</span>' : ''}
+                                </h2>
                                 <p style="opacity: 0.6; margin-bottom: 20px;">${user.telegram}</p>
                                 <div class="profile-info">
                                     <div class="profile-card">
@@ -1261,7 +1567,7 @@ def app_page():
                                         <div class="label">⭐ Звание</div>
                                     </div>
                                 </div>
-                                ${user.is_admin ? '<div style="margin-top:15px; color: #ffd700;">👑 Администратор</div>' : ''}
+                                ${user.is_admin ? '<div style="margin-top:15px; color: #ffd700; font-size:18px;">👑 Администратор</div>' : ''}
                             </div>
                         `;
                         modal.classList.add('active');
@@ -1271,23 +1577,6 @@ def app_page():
 
             function closeUserProfile() {
                 document.getElementById('userProfileModal').classList.remove('active');
-            }
-
-            function buyItem(itemId) {
-                fetch('/api/buy', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ item_id: itemId })
-                })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('✅ ' + data.message);
-                        loadUserData();
-                    } else {
-                        alert('❌ ' + data.message);
-                    }
-                });
             }
 
             // === АДМИН ФУНКЦИИ ===
@@ -1338,7 +1627,7 @@ def app_page():
                                 ${data.users.map(user => `
                                     <div class="user-card" onclick="viewUser('${user.telegram}')">
                                         <div class="user-info">
-                                            <span class="user-name">${user.avatar || '👤'} ${user.name}</span>
+                                            <span class="user-name">${user.avatar || '👤'} ${user.name} ${user.is_admin ? '👑' : ''}</span>
                                             <span class="user-telegram">${user.telegram}</span>
                                             <span class="user-stats">${user.points} ПТ • ${user.wins} побед ${user.rank ? '• ⭐ ' + user.rank : ''}</span>
                                         </div>
@@ -1369,6 +1658,7 @@ def app_page():
                     if (data.success) {
                         alert('✅ ' + data.message);
                         loadUsersList();
+                        loadUserData();
                     } else {
                         alert('❌ ' + data.message);
                     }
@@ -1597,7 +1887,6 @@ def api_change_avatar():
     users = load_users()
     user = users.get(session['user_id'])
     
-    # Проверяем что аватарка куплена
     purchased = user.get('purchases', [])
     avatar_items = [p for p in purchased if p.get('category') == 'avatar' and p.get('icon') == new_avatar]
     
@@ -1613,7 +1902,6 @@ def api_top():
     users = load_users()
     wins = load_wins()
     
-    # Собираем данные о пользователях
     user_data = []
     for uid, user in users.items():
         user_wins = [w for w in wins['wins'] if w['telegram'] == user['telegram']]
@@ -1624,10 +1912,10 @@ def api_top():
             'points': user.get('points', 0),
             'wins': len(user_wins),
             'rank': user.get('rank', ''),
-            'avatar': user.get('avatar', '👤')
+            'avatar': user.get('avatar', '👤'),
+            'is_admin': user.get('is_admin', False)
         })
     
-    # Сортируем по ПТ
     by_points = sorted(user_data, key=lambda x: x['points'], reverse=True)[:20]
     by_wins = sorted(user_data, key=lambda x: x['wins'], reverse=True)[:20]
     
@@ -1890,7 +2178,6 @@ def api_buy():
         user['frame'] = item['icon']
         user['frame_color'] = '#ffd700' if 'Золотая' in item['name'] else '#c0c0c0' if 'Серебряная' in item['name'] else '#cd7f32' if 'Бронзовая' in item['name'] else '#00ffff' if 'Алмазная' in item['name'] else '#f5576c'
     elif item['category'] == 'avatar':
-        # Не меняем автоматически, пользователь сам выберет
         pass
     
     save_users(users)
@@ -1959,6 +2246,25 @@ def register():
     except Exception as e:
         print(f"Ошибка: {e}")
         return jsonify({'success': False, 'message': 'Ошибка на сервере'})
+
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    telegram = data.get('telegram', '').strip()
+    password = data.get('password', '')
+    
+    users = load_users()
+    
+    for user_id, user in users.items():
+        if user.get('telegram') == telegram:
+            if user.get('password_hash') == hash_password(password):
+                session['user_id'] = user_id
+                session['user_name'] = user.get('name')
+                return jsonify({'success': True, 'message': 'Добро пожаловать!'})
+            else:
+                return jsonify({'success': False, 'message': 'Неверный пароль!'})
+    
+    return jsonify({'success': False, 'message': 'Пользователь не найден!'})
 
 @app.route('/logout')
 def logout():
