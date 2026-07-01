@@ -1272,23 +1272,23 @@ def app_page():
         <script>
             let currentUser = null;
             let currentAdminCode = '';
-            let isAdmin = {'{' + f'{is_admin}' + '}'};
+            let isAdmin = {str(is_admin).lower()};
 
-            function loadUserData() {
+            function loadUserData() {{
                 fetch('/api/user')
                     .then(res => res.json())
-                    .then(data => {
-                        if (data.success) {
+                    .then(data => {{
+                        if (data.success) {{
                             currentUser = data.user;
                             renderProfile();
                             renderShop();
                             renderWins();
                             renderTop();
-                        }
-                    });
-            }
+                        }}
+                    }});
+            }}
 
-            function showSection(section) {
+            function showSection(section) {{
                 document.querySelectorAll('.content').forEach(el => el.classList.remove('active'));
                 document.querySelectorAll('.main-menu button').forEach(el => el.classList.remove('active'));
                 
@@ -1299,9 +1299,9 @@ def app_page():
                 if (section === 'shop') renderShop();
                 if (section === 'wins') renderWins();
                 if (section === 'top') renderTop();
-            }
+            }}
 
-            function renderProfile() {
+            function renderProfile() {{
                 if (!currentUser) return;
                 const section = document.getElementById('profile-section');
                 const avatar = currentUser.avatar || '👤';
@@ -1312,132 +1312,132 @@ def app_page():
                     currentUser.purchases.filter(p => p.category === 'avatar').map(p => p.icon) : [];
                 
                 let avatarHtml = '';
-                if (purchasedAvatars.length > 0) {
+                if (purchasedAvatars.length > 0) {{
                     avatarHtml = `
                         <div style="margin: 20px 0;">
                             <p style="opacity:0.5; font-size:14px; margin-bottom:10px;">Выберите аватарку:</p>
                             <div class="avatar-select">
-                                ${purchasedAvatars.map(a => `
-                                    <div class="avatar-option ${currentUser.avatar === a ? 'selected' : ''}" 
-                                         onclick="changeAvatar('{a}')">${a}</div>
-                                `).join('')}
+                                ${{purchasedAvatars.map(a => `
+                                    <div class="avatar-option ${{currentUser.avatar === a ? 'selected' : ''}}" 
+                                         onclick="changeAvatar('{a}')">${{a}}</div>
+                                `).join('')}}
                             </div>
                         </div>
                     `;
-                }
+                }}
                 
                 section.innerHTML = `
                     <div style="text-align: center;">
-                        <div class="profile-frame" style="border-color: ${currentUser.frame_color || '#f5576c'}">
-                            <div class="profile-avatar">${avatar}</div>
+                        <div class="profile-frame" style="border-color: ${{currentUser.frame_color || '#f5576c'}}">
+                            <div class="profile-avatar">${{avatar}}</div>
                         </div>
-                        ${rank ? `<div class="profile-rank">${rank}</div>` : ''}
+                        ${{rank ? `<div class="profile-rank">${{rank}}</div>` : ''}}
                         <h2 style="font-size: 28px; margin: 10px 0;">
-                            ${currentUser.name}
-                            ${isAdminUser ? '<span class="admin-crown">👑</span>' : ''}
+                            ${{currentUser.name}}
+                            ${{isAdminUser ? '<span class="admin-crown">👑</span>' : ''}}
                         </h2>
-                        <p style="opacity: 0.6; margin-bottom: 20px;">${currentUser.telegram}</p>
-                        ${avatarHtml}
+                        <p style="opacity: 0.6; margin-bottom: 20px;">${{currentUser.telegram}}</p>
+                        ${{avatarHtml}}
                         <div class="profile-info">
                             <div class="profile-card">
-                                <div class="value" style="color: #f5576c;">${currentUser.points || 0}</div>
+                                <div class="value" style="color: #f5576c;">${{currentUser.points || 0}}</div>
                                 <div class="label">💰 ПТ Баллов</div>
                             </div>
                             <div class="profile-card">
-                                <div class="value" style="color: #4ecdc4;">${currentUser.wins_count || 0}</div>
+                                <div class="value" style="color: #4ecdc4;">${{currentUser.wins_count || 0}}</div>
                                 <div class="label">🏆 Побед</div>
                             </div>
                             <div class="profile-card">
-                                <div class="value" style="color: #ffe66d; font-size: 20px;">${currentUser.rank || 'Нет звания'}</div>
+                                <div class="value" style="color: #ffe66d; font-size: 20px;">${{currentUser.rank || 'Нет звания'}}</div>
                                 <div class="label">⭐ Звание</div>
                             </div>
                         </div>
                         <div style="margin-top: 20px; opacity: 0.3; font-size: 12px;">
-                            IP: ${currentUser.ip} • Зарегистрирован: ${new Date(currentUser.registered_at).toLocaleDateString()}
-                            ${isAdminUser ? ' • 👑 Администратор' : ''}
+                            IP: ${{currentUser.ip}} • Зарегистрирован: ${{new Date(currentUser.registered_at).toLocaleDateString()}}
+                            ${{isAdminUser ? ' • 👑 Администратор' : ''}}
                         </div>
                     </div>
                 `;
-            }
+            }}
 
-            function changeAvatar(avatar) {
-                fetch('/api/change_avatar', {
+            function changeAvatar(avatar) {{
+                fetch('/api/change_avatar', {{
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ avatar: avatar })
-                })
+                    headers: {{ 'Content-Type': 'application/json' }},
+                    body: JSON.stringify({{ avatar: avatar }})
+                }})
                 .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
+                .then(data => {{
+                    if (data.success) {{
                         currentUser.avatar = avatar;
                         renderProfile();
-                    } else {
+                    }} else {{
                         alert('❌ ' + data.message);
-                    }
-                });
-            }
+                    }}
+                }});
+            }}
 
-            function renderShop() {
+            function renderShop() {{
                 const section = document.getElementById('shop-section');
                 fetch('/api/shop')
                     .then(res => res.json())
-                    .then(data => {
-                        const itemsByCategory = {
+                    .then(data => {{
+                        const itemsByCategory = {{
                             rank: data.items.filter(i => i.category === 'rank'),
                             frame: data.items.filter(i => i.category === 'frame'),
                             avatar: data.items.filter(i => i.category === 'avatar')
-                        };
+                        }};
                         
                         let html = `
                             <h2 style="margin-bottom: 20px;">🛒 Магазин</h2>
-                            <p style="opacity: 0.6; margin-bottom: 20px;">Ваши баллы: <strong style="color: #f5576c;">${currentUser ? currentUser.points || 0 : 0} ПТ</strong></p>
+                            <p style="opacity: 0.6; margin-bottom: 20px;">Ваши баллы: <strong style="color: #f5576c;">${{currentUser ? currentUser.points || 0 : 0}} ПТ</strong></p>
                         `;
 
-                        for (const [category, items] of Object.entries(itemsByCategory)) {
+                        for (const [category, items] of Object.entries(itemsByCategory)) {{
                             if (items.length === 0) continue;
-                            const categoryNames = { rank: '⭐ Звания', frame: '🖼 Рамки', avatar: '🎨 Аватарки' };
-                            html += `<h3 style="margin: 20px 0 10px 0;">${categoryNames[category] || category}</h3><div class="shop-grid">`;
-                            items.forEach(item => {
+                            const categoryNames = {{ rank: '⭐ Звания', frame: '🖼 Рамки', avatar: '🎨 Аватарки' }};
+                            html += `<h3 style="margin: 20px 0 10px 0;">${{categoryNames[category] || category}}</h3><div class="shop-grid">`;
+                            items.forEach(item => {{
                                 const owned = currentUser && currentUser.purchases && currentUser.purchases.some(p => p.item_id === item.id);
                                 html += `
                                     <div class="shop-item">
-                                        <div class="icon">${item.icon}</div>
-                                        <div class="name">${item.name}</div>
-                                        <div class="category-badge">${category}</div>
-                                        <div class="price">${item.price} ПТ</div>
-                                        ${owned ? '<div class="owned">✅ Куплено</div>' : `<button onclick="buyItem(${item.id})">Купить</button>`}
+                                        <div class="icon">${{item.icon}}</div>
+                                        <div class="name">${{item.name}}</div>
+                                        <div class="category-badge">${{category}}</div>
+                                        <div class="price">${{item.price}} ПТ</div>
+                                        ${{owned ? '<div class="owned">✅ Куплено</div>' : `<button onclick="buyItem(${{item.id}})">Купить</button>`}}
                                     </div>
                                 `;
-                            });
+                            }});
                             html += `</div>`;
-                        }
+                        }}
                         
                         section.innerHTML = html;
-                    });
-            }
+                    }});
+            }}
 
-            function buyItem(itemId) {
-                fetch('/api/buy', {
+            function buyItem(itemId) {{
+                fetch('/api/buy', {{
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ item_id: itemId })
-                })
+                    headers: {{ 'Content-Type': 'application/json' }},
+                    body: JSON.stringify({{ item_id: itemId }})
+                }})
                 .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
+                .then(data => {{
+                    if (data.success) {{
                         alert('✅ ' + data.message);
                         loadUserData();
-                    } else {
+                    }} else {{
                         alert('❌ ' + data.message);
-                    }
-                });
-            }
+                    }}
+                }});
+            }}
 
-            function renderWins() {
+            function renderWins() {{
                 const section = document.getElementById('wins-section');
                 fetch('/api/wins')
                     .then(res => res.json())
-                    .then(data => {
+                    .then(data => {{
                         const recentWins = data.wins.slice(-10).reverse();
                         const topWins = [...data.wins].sort((a, b) => b.amount - a.amount).slice(0, 10);
 
@@ -1447,355 +1447,355 @@ def app_page():
                                 <div>
                                     <h3 style="margin-bottom: 15px;">📋 Недавние выигрыши</h3>
                                     <div class="wins-list">
-                                        ${recentWins.length === 0 ? '<p style="opacity: 0.3;">Пока нет выигрышей</p>' : recentWins.map(win => `
+                                        ${{recentWins.length === 0 ? '<p style="opacity: 0.3;">Пока нет выигрышей</p>' : recentWins.map(win => `
                                             <div class="win-item">
                                                 <div>
-                                                    <span class="telegram" onclick="viewUser('${win.telegram}')">${win.telegram}</span>
-                                                    <span class="prize"> - ${win.prize}</span>
+                                                    <span class="telegram" onclick="viewUser('${{win.telegram}}')">${{win.telegram}}</span>
+                                                    <span class="prize"> - ${{win.prize}}</span>
                                                 </div>
                                                 <div>
-                                                    <span class="amount">+${win.amount} ПТ</span>
-                                                    <span class="date">${new Date(win.date).toLocaleDateString()}</span>
+                                                    <span class="amount">+${{win.amount}} ПТ</span>
+                                                    <span class="date">${{new Date(win.date).toLocaleDateString()}}</span>
                                                 </div>
                                             </div>
-                                        `).join('')}
+                                        `).join('')}}
                                     </div>
                                 </div>
                                 <div>
                                     <h3 style="margin-bottom: 15px;">🏆 Топ по сумме ПТ</h3>
                                     <div class="wins-list">
-                                        ${topWins.length === 0 ? '<p style="opacity: 0.3;">Нет данных</p>' : topWins.map((win, index) => `
+                                        ${{topWins.length === 0 ? '<p style="opacity: 0.3;">Нет данных</p>' : topWins.map((win, index) => `
                                             <div class="win-item">
                                                 <div>
-                                                    <span style="opacity: 0.5;">${index + 1}.</span>
-                                                    <span class="telegram" onclick="viewUser('${win.telegram}')">${win.telegram}</span>
+                                                    <span style="opacity: 0.5;">${{index + 1}}.</span>
+                                                    <span class="telegram" onclick="viewUser('${{win.telegram}}')">${{win.telegram}}</span>
                                                 </div>
                                                 <div>
-                                                    <span class="amount">${win.amount} ПТ</span>
+                                                    <span class="amount">${{win.amount}} ПТ</span>
                                                 </div>
                                             </div>
-                                        `).join('')}
+                                        `).join('')}}
                                     </div>
                                 </div>
                             </div>
                         `;
-                    });
-            }
+                    }});
+            }}
 
-            function renderTop() {
+            function renderTop() {{
                 const section = document.getElementById('top-section');
                 fetch('/api/top')
                     .then(res => res.json())
-                    .then(data => {
+                    .then(data => {{
                         section.innerHTML = `
                             <h2 style="margin-bottom: 20px;">🏆 Топ участников</h2>
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
                                 <div>
                                     <h3 style="margin-bottom: 15px;">💰 Топ по ПТ</h3>
                                     <div class="wins-list">
-                                        ${data.by_points.length === 0 ? '<p style="opacity: 0.3;">Нет данных</p>' : data.by_points.map((user, index) => `
+                                        ${{data.by_points.length === 0 ? '<p style="opacity: 0.3;">Нет данных</p>' : data.by_points.map((user, index) => `
                                             <div class="win-item">
                                                 <div>
-                                                    <span style="opacity: 0.5;">${index + 1}.</span>
-                                                    <span onclick="viewUser('${user.telegram}')" style="cursor:pointer; font-weight:bold; color: #ffe66d;">${user.name} ${user.is_admin ? '👑' : ''}</span>
-                                                    <span style="opacity:0.5;">${user.telegram}</span>
+                                                    <span style="opacity: 0.5;">${{index + 1}}.</span>
+                                                    <span onclick="viewUser('${{user.telegram}}')" style="cursor:pointer; font-weight:bold; color: #ffe66d;">${{user.name}} ${{user.is_admin ? '👑' : ''}}</span>
+                                                    <span style="opacity:0.5;">${{user.telegram}}</span>
                                                 </div>
                                                 <div>
-                                                    <span style="color: #f5576c; font-weight:bold;">${user.points} ПТ</span>
-                                                    ${user.rank ? `<span style="margin-left:10px;">⭐ ${user.rank}</span>` : ''}
+                                                    <span style="color: #f5576c; font-weight:bold;">${{user.points}} ПТ</span>
+                                                    ${{user.rank ? `<span style="margin-left:10px;">⭐ ${{user.rank}}</span>` : ''}}
                                                 </div>
                                             </div>
-                                        `).join('')}
+                                        `).join('')}}
                                     </div>
                                 </div>
                                 <div>
                                     <h3 style="margin-bottom: 15px;">🏆 Топ по победам</h3>
                                     <div class="wins-list">
-                                        ${data.by_wins.length === 0 ? '<p style="opacity: 0.3;">Нет данных</p>' : data.by_wins.map((user, index) => `
+                                        ${{data.by_wins.length === 0 ? '<p style="opacity: 0.3;">Нет данных</p>' : data.by_wins.map((user, index) => `
                                             <div class="win-item">
                                                 <div>
-                                                    <span style="opacity: 0.5;">${index + 1}.</span>
-                                                    <span onclick="viewUser('${user.telegram}')" style="cursor:pointer; font-weight:bold; color: #4ecdc4;">${user.name} ${user.is_admin ? '👑' : ''}</span>
-                                                    <span style="opacity:0.5;">${user.telegram}</span>
+                                                    <span style="opacity: 0.5;">${{index + 1}}.</span>
+                                                    <span onclick="viewUser('${{user.telegram}}')" style="cursor:pointer; font-weight:bold; color: #4ecdc4;">${{user.name}} ${{user.is_admin ? '👑' : ''}}</span>
+                                                    <span style="opacity:0.5;">${{user.telegram}}</span>
                                                 </div>
                                                 <div>
-                                                    <span style="color: #4ecdc4; font-weight:bold;">${user.wins} 🏆</span>
-                                                    ${user.rank ? `<span style="margin-left:10px;">⭐ ${user.rank}</span>` : ''}
+                                                    <span style="color: #4ecdc4; font-weight:bold;">${{user.wins}} 🏆</span>
+                                                    ${{user.rank ? `<span style="margin-left:10px;">⭐ ${{user.rank}}</span>` : ''}}
                                                 </div>
                                             </div>
-                                        `).join('')}
+                                        `).join('')}}
                                     </div>
                                 </div>
                             </div>
                         `;
-                    });
-            }
+                    }});
+            }}
 
-            function viewUser(telegram) {
-                fetch('/api/user_by_telegram', {
+            function viewUser(telegram) {{
+                fetch('/api/user_by_telegram', {{
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ telegram: telegram })
-                })
+                    headers: {{ 'Content-Type': 'application/json' }},
+                    body: JSON.stringify({{ telegram: telegram }})
+                }})
                 .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
+                .then(data => {{
+                    if (data.success) {{
                         const user = data.user;
                         const modal = document.getElementById('userProfileModal');
                         document.getElementById('userProfileContent').innerHTML = `
                             <div style="text-align: center;">
-                                <div class="profile-frame" style="border-color: ${user.frame_color || '#f5576c'}">
-                                    <div class="profile-avatar">${user.avatar || '👤'}</div>
+                                <div class="profile-frame" style="border-color: ${{user.frame_color || '#f5576c'}}">
+                                    <div class="profile-avatar">${{user.avatar || '👤'}}</div>
                                 </div>
-                                ${user.rank ? `<div class="profile-rank">${user.rank}</div>` : ''}
+                                ${{user.rank ? `<div class="profile-rank">${{user.rank}}</div>` : ''}}
                                 <h2 style="font-size: 28px; margin: 10px 0;">
-                                    ${user.name}
-                                    ${user.is_admin ? '<span class="admin-crown">👑</span>' : ''}
+                                    ${{user.name}}
+                                    ${{user.is_admin ? '<span class="admin-crown">👑</span>' : ''}}
                                 </h2>
-                                <p style="opacity: 0.6; margin-bottom: 20px;">${user.telegram}</p>
+                                <p style="opacity: 0.6; margin-bottom: 20px;">${{user.telegram}}</p>
                                 <div class="profile-info">
                                     <div class="profile-card">
-                                        <div class="value" style="color: #f5576c;">${user.points || 0}</div>
+                                        <div class="value" style="color: #f5576c;">${{user.points || 0}}</div>
                                         <div class="label">💰 ПТ Баллов</div>
                                     </div>
                                     <div class="profile-card">
-                                        <div class="value" style="color: #4ecdc4;">${user.wins_count || 0}</div>
+                                        <div class="value" style="color: #4ecdc4;">${{user.wins_count || 0}}</div>
                                         <div class="label">🏆 Побед</div>
                                     </div>
                                     <div class="profile-card">
-                                        <div class="value" style="color: #ffe66d; font-size: 20px;">${user.rank || 'Нет звания'}</div>
+                                        <div class="value" style="color: #ffe66d; font-size: 20px;">${{user.rank || 'Нет звания'}}</div>
                                         <div class="label">⭐ Звание</div>
                                     </div>
                                 </div>
-                                ${user.is_admin ? '<div style="margin-top:15px; color: #ffd700; font-size:18px;">👑 Администратор</div>' : ''}
+                                ${{user.is_admin ? '<div style="margin-top:15px; color: #ffd700; font-size:18px;">👑 Администратор</div>' : ''}}
                             </div>
                         `;
                         modal.classList.add('active');
-                    }
-                });
-            }
+                    }}
+                }});
+            }}
 
-            function closeUserProfile() {
+            function closeUserProfile() {{
                 document.getElementById('userProfileModal').classList.remove('active');
-            }
+            }}
 
             // === АДМИН ФУНКЦИИ ===
 
-            function showAdminPanel() {
+            function showAdminPanel() {{
                 document.getElementById('adminModal').classList.add('active');
                 document.getElementById('adminContent').style.display = 'none';
                 document.getElementById('adminCode').value = '';
-            }
+            }}
 
-            function closeAdminPanel() {
+            function closeAdminPanel() {{
                 document.getElementById('adminModal').classList.remove('active');
-            }
+            }}
 
-            function checkAdminCode() {
+            function checkAdminCode() {{
                 const code = document.getElementById('adminCode').value;
                 currentAdminCode = code;
                 
-                fetch('/api/admin/check', {
+                fetch('/api/admin/check', {{
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ code: code })
-                })
+                    headers: {{ 'Content-Type': 'application/json' }},
+                    body: JSON.stringify({{ code: code }})
+                }})
                 .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
+                .then(data => {{
+                    if (data.success) {{
                         document.getElementById('adminContent').style.display = 'block';
                         loadUsersList();
                         loadAdminShop();
                         loadAdminWins();
-                    } else {
+                    }} else {{
                         alert('❌ Неверный код доступа!');
-                    }
-                });
-            }
+                    }}
+                }});
+            }}
 
-            function loadUsersList() {
+            function loadUsersList() {{
                 fetch('/api/admin/users')
                     .then(res => res.json())
-                    .then(data => {
-                        if (!data.success) {
+                    .then(data => {{
+                        if (!data.success) {{
                             document.getElementById('usersList').innerHTML = '<p style="opacity:0.5;">Нет прав или ошибка</p>';
                             return;
-                        }
+                        }}
                         const list = document.getElementById('usersList');
                         list.innerHTML = `
                             <div class="users-grid">
-                                ${data.users.map(user => `
-                                    <div class="user-card" onclick="viewUser('${user.telegram}')">
+                                ${{data.users.map(user => `
+                                    <div class="user-card" onclick="viewUser('${{user.telegram}}')">
                                         <div class="user-info">
-                                            <span class="user-name">${user.avatar || '👤'} ${user.name} ${user.is_admin ? '👑' : ''}</span>
-                                            <span class="user-telegram">${user.telegram}</span>
-                                            <span class="user-stats">${user.points} ПТ • ${user.wins} побед ${user.rank ? '• ⭐ ' + user.rank : ''}</span>
+                                            <span class="user-name">${{user.avatar || '👤'}} ${{user.name}} ${{user.is_admin ? '👑' : ''}}</span>
+                                            <span class="user-telegram">${{user.telegram}}</span>
+                                            <span class="user-stats">${{user.points}} ПТ • ${{user.wins}} побед ${{user.rank ? '• ⭐ ' + user.rank : ''}}</span>
                                         </div>
                                         <div>
-                                            ${user.is_admin ? '<span class="admin-badge">👑 Админ</span>' : 
-                                            `<button class="make-admin-btn" onclick="event.stopPropagation(); makeAdmin('${user.id}')">Назначить админом</button>`}
+                                            ${{user.is_admin ? '<span class="admin-badge">👑 Админ</span>' : 
+                                            `<button class="make-admin-btn" onclick="event.stopPropagation(); makeAdmin('${{user.id}}')">Назначить админом</button>`}}
                                         </div>
                                     </div>
-                                `).join('')}
+                                `).join('')}}
                             </div>
                         `;
-                    });
-            }
+                    }});
+            }}
 
-            function makeAdmin(userId) {
+            function makeAdmin(userId) {{
                 if (!confirm('Назначить этого пользователя администратором?')) return;
                 
-                fetch('/api/admin/make_admin', {
+                fetch('/api/admin/make_admin', {{
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
+                    headers: {{ 'Content-Type': 'application/json' }},
+                    body: JSON.stringify({{ 
                         user_id: userId,
                         code: currentAdminCode 
-                    })
-                })
+                    }})
+                }})
                 .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
+                .then(data => {{
+                    if (data.success) {{
                         alert('✅ ' + data.message);
                         loadUsersList();
                         loadUserData();
-                    } else {
+                    }} else {{
                         alert('❌ ' + data.message);
-                    }
-                });
-            }
+                    }}
+                }});
+            }}
 
-            function changeCode() {
+            function changeCode() {{
                 const oldCode = document.getElementById('oldCode').value;
                 const newCode = document.getElementById('newCode').value;
                 
-                if (!oldCode || !newCode) {
+                if (!oldCode || !newCode) {{
                     alert('Заполните оба поля!');
                     return;
-                }
+                }}
                 
-                if (newCode.length < 4) {
+                if (newCode.length < 4) {{
                     alert('Новый код должен быть минимум 4 символа');
                     return;
-                }
+                }}
                 
-                fetch('/api/admin/change_code', {
+                fetch('/api/admin/change_code', {{
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
+                    headers: {{ 'Content-Type': 'application/json' }},
+                    body: JSON.stringify({{ 
                         old_code: oldCode,
                         new_code: newCode 
-                    })
-                })
+                    }})
+                }})
                 .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
+                .then(data => {{
+                    if (data.success) {{
                         alert('✅ ' + data.message);
                         document.getElementById('oldCode').value = '';
                         document.getElementById('newCode').value = '';
                         currentAdminCode = newCode;
-                    } else {
+                    }} else {{
                         alert('❌ ' + data.message);
-                    }
-                });
-            }
+                    }}
+                }});
+            }}
 
-            function loadAdminShop() {
+            function loadAdminShop() {{
                 fetch('/api/shop')
                     .then(res => res.json())
-                    .then(data => {
+                    .then(data => {{
                         const list = document.getElementById('shopItemsList');
                         list.innerHTML = data.items.map(item => `
                             <div style="display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.05);">
-                                <span>${item.icon} ${item.name} - ${item.price} ПТ (${item.category})</span>
-                                <button onclick="deleteShopItem(${item.id})" style="background: rgba(255,0,0,0.2); border: none; color: white; padding: 5px 15px; border-radius: 5px; cursor: pointer;">🗑</button>
+                                <span>${{item.icon}} ${{item.name}} - ${{item.price}} ПТ (${{item.category}})</span>
+                                <button onclick="deleteShopItem(${{item.id}})" style="background: rgba(255,0,0,0.2); border: none; color: white; padding: 5px 15px; border-radius: 5px; cursor: pointer;">🗑</button>
                             </div>
                         `).join('');
-                    });
-            }
+                    }});
+            }}
 
-            function addShopItem() {
+            function addShopItem() {{
                 const name = document.getElementById('itemName').value;
                 const price = parseInt(document.getElementById('itemPrice').value);
                 const category = document.getElementById('itemCategory').value;
                 const icon = document.getElementById('itemIcon').value;
 
-                if (!name || !price || !icon) {
+                if (!name || !price || !icon) {{
                     alert('Заполните все поля!');
                     return;
-                }
+                }}
 
-                fetch('/api/admin/shop/add', {
+                fetch('/api/admin/shop/add', {{
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, price, category, icon })
-                })
+                    headers: {{ 'Content-Type': 'application/json' }},
+                    body: JSON.stringify({{ name, price, category, icon }})
+                }})
                 .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
+                .then(data => {{
+                    if (data.success) {{
                         alert('✅ Товар добавлен!');
                         document.getElementById('itemName').value = '';
                         document.getElementById('itemPrice').value = '';
                         document.getElementById('itemIcon').value = '';
                         loadAdminShop();
                         renderShop();
-                    } else {
+                    }} else {{
                         alert('❌ ' + data.message);
-                    }
-                });
-            }
+                    }}
+                }});
+            }}
 
-            function deleteShopItem(itemId) {
+            function deleteShopItem(itemId) {{
                 if (!confirm('Удалить товар?')) return;
-                fetch('/api/admin/shop/delete', {
+                fetch('/api/admin/shop/delete', {{
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ item_id: itemId })
-                })
+                    headers: {{ 'Content-Type': 'application/json' }},
+                    body: JSON.stringify({{ item_id: itemId }})
+                }})
                 .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
+                .then(data => {{
+                    if (data.success) {{
                         alert('✅ Товар удален!');
                         loadAdminShop();
                         renderShop();
-                    } else {
+                    }} else {{
                         alert('❌ ' + data.message);
-                    }
-                });
-            }
+                    }}
+                }});
+            }}
 
-            function loadAdminWins() {
+            function loadAdminWins() {{
                 fetch('/api/wins')
                     .then(res => res.json())
-                    .then(data => {
+                    .then(data => {{
                         const list = document.getElementById('winsListAdmin');
                         list.innerHTML = data.wins.slice().reverse().slice(0, 20).map(win => `
                             <div style="display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.05);">
-                                <span>${win.telegram} - ${win.prize} (+${win.amount} ПТ)</span>
-                                <button onclick="deleteWin(${win.id})" style="background: rgba(255,0,0,0.2); border: none; color: white; padding: 5px 15px; border-radius: 5px; cursor: pointer;">🗑</button>
+                                <span>${{win.telegram}} - ${{win.prize}} (+${{win.amount}} ПТ)</span>
+                                <button onclick="deleteWin(${{win.id}})" style="background: rgba(255,0,0,0.2); border: none; color: white; padding: 5px 15px; border-radius: 5px; cursor: pointer;">🗑</button>
                             </div>
                         `).join('');
-                    });
-            }
+                    }});
+            }}
 
-            function addWinAdmin() {
+            function addWinAdmin() {{
                 const telegram = document.getElementById('winTelegram').value;
                 const prize = document.getElementById('winPrize').value;
                 const amount = parseInt(document.getElementById('winAmount').value);
 
-                if (!telegram || !prize || !amount) {
+                if (!telegram || !prize || !amount) {{
                     alert('Заполните все поля!');
                     return;
-                }
+                }}
 
-                fetch('/api/admin/win/add', {
+                fetch('/api/admin/win/add', {{
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ telegram, prize, amount })
-                })
+                    headers: {{ 'Content-Type': 'application/json' }},
+                    body: JSON.stringify({{ telegram, prize, amount }})
+                }})
                 .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
+                .then(data => {{
+                    if (data.success) {{
                         alert('✅ Выигрыш добавлен!');
                         document.getElementById('winTelegram').value = '';
                         document.getElementById('winPrize').value = '';
@@ -1803,36 +1803,36 @@ def app_page():
                         loadAdminWins();
                         renderWins();
                         loadUserData();
-                    } else {
+                    }} else {{
                         alert('❌ ' + data.message);
-                    }
-                });
-            }
+                    }}
+                }});
+            }}
 
-            function deleteWin(winId) {
+            function deleteWin(winId) {{
                 if (!confirm('Удалить выигрыш?')) return;
-                fetch('/api/admin/win/delete', {
+                fetch('/api/admin/win/delete', {{
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ win_id: winId })
-                })
+                    headers: {{ 'Content-Type': 'application/json' }},
+                    body: JSON.stringify({{ win_id: winId }})
+                }})
                 .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
+                .then(data => {{
+                    if (data.success) {{
                         alert('✅ Выигрыш удален!');
                         loadAdminWins();
                         renderWins();
                         loadUserData();
-                    } else {
+                    }} else {{
                         alert('❌ ' + data.message);
-                    }
-                });
-            }
+                    }}
+                }});
+            }}
 
-            function logout() {
+            function logout() {{
                 fetch('/logout')
                     .then(() => window.location.href = '/');
-            }
+            }}
 
             loadUserData();
             showSection('profile');
