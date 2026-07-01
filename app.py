@@ -1419,7 +1419,7 @@ def app_page():
                             <div class="avatar-select">
                                 ${{purchasedAvatars.map(a => `
                                     <div class="avatar-option ${{currentUser.avatar === a ? 'selected' : ''}}" 
-                                         onclick="changeAvatar('{a}')">${{a}}</div>
+                                         onclick="changeAvatar('{{a}}')">${{a}}</div>
                                 `).join('')}}
                             </div>
                         </div>
