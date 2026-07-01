@@ -12,6 +12,13 @@ app.secret_key = 'change-this-to-random-secret-key-12345'
 USERS_FILE = 'users.json'
 WINS_FILE = 'wins.json'
 SHOP_FILE = 'shop.json'
+ADMIN_CODE_FILE = 'admin_code.txt'
+
+def get_admin_code():
+    if os.path.exists(ADMIN_CODE_FILE):
+        with open(ADMIN_CODE_FILE, 'r') as f:
+            return f.read().strip()
+    return '132547'
 
 def load_users():
     if os.path.exists(USERS_FILE):
@@ -71,6 +78,18 @@ def login_required(f):
     def decorated_function(*args, **kwargs):
         if 'user_id' not in session:
             return jsonify({'success': False, 'message': 'Требуется авторизация'}), 401
+        return f(*args, **kwargs)
+    return decorated_function
+
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            return jsonify({'success': False, 'message': 'Требуется авторизация'}), 401
+        users = load_users()
+        user = users.get(session['user_id'])
+        if not user or not user.get('is_admin', False):
+            return jsonify({'success': False, 'message': 'Требуются права администратора'}), 403
         return f(*args, **kwargs)
     return decorated_function
 
@@ -389,15 +408,15 @@ def register_page():
             <form id="registerForm" onsubmit="register(event)">
                 <div class="input-group">
                     <label>Ваше имя</label>
-                    <input type="text" id="name" placeholder="Алексей" required>
+                    <input type="text" id="name" placeholder="Введите ваше имя" required>
                 </div>
                 <div class="input-group">
                     <label>Telegram ник</label>
-                    <input type="text" id="telegram" placeholder="@Ale7xey" required>
+                    <input type="text" id="telegram" placeholder="@username" required>
                 </div>
                 <div class="input-group">
                     <label>Пароль</label>
-                    <input type="password" id="password" placeholder="••••••••" required minlength="6">
+                    <input type="password" id="password" placeholder="Минимум 6 символов" required minlength="6">
                 </div>
                 <div id="message" class="message"></div>
                 <button type="submit" class="btn-register" id="registerBtn">Зарегистрироваться</button>
@@ -407,7 +426,6 @@ def register_page():
         </div>
 
         <script>
-            // Показываем IP
             fetch('/get_ip')
                 .then(res => res.json())
                 .then(data => {
@@ -492,13 +510,16 @@ def register_page():
 
 # === СТРАНИЦА 3: ОСНОВНОЕ ПРИЛОЖЕНИЕ ===
 
+def redirect_to_app():
+    return '<script>window.location.href="/app"</script>'
+
+def redirect_to_home():
+    return '<script>window.location.href="/"</script>'
+
 @app.route('/app')
 def app_page():
     if 'user_id' not in session:
         return redirect_to_home()
-    return redirect_to_app()
-
-def redirect_to_app():
     return '''
     <!DOCTYPE html>
     <html>
@@ -629,37 +650,6 @@ def redirect_to_app():
                 font-size: 13px;
                 letter-spacing: 3px;
             }
-            .admin-panel {
-                background: rgba(255,0,0,0.1);
-                border: 1px solid rgba(255,0,0,0.2);
-                border-radius: 15px;
-                padding: 20px;
-                margin-top: 20px;
-            }
-            .admin-panel h4 {
-                color: #ff6b6b;
-                margin-bottom: 15px;
-            }
-            .admin-panel input, .admin-panel select {
-                padding: 10px;
-                background: rgba(255,255,255,0.05);
-                border: 1px solid rgba(255,255,255,0.1);
-                border-radius: 10px;
-                color: white;
-                outline: none;
-            }
-            .admin-panel button {
-                padding: 10px 20px;
-                background: rgba(255,107,107,0.2);
-                border: 1px solid rgba(255,107,107,0.2);
-                border-radius: 10px;
-                color: white;
-                cursor: pointer;
-                transition: all 0.3s;
-            }
-            .admin-panel button:hover {
-                background: rgba(255,107,107,0.3);
-            }
             .shop-grid {
                 display: grid;
                 grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -739,6 +729,12 @@ def redirect_to_app():
                 padding: 25px;
                 border-radius: 15px;
                 text-align: center;
+                cursor: pointer;
+                transition: all 0.3s;
+            }
+            .profile-card:hover {
+                background: rgba(255,255,255,0.1);
+                transform: scale(1.02);
             }
             .profile-card .value {
                 font-size: 32px;
@@ -783,7 +779,7 @@ def redirect_to_app():
                 background: #1a1a2e;
                 padding: 40px;
                 border-radius: 20px;
-                max-width: 500px;
+                max-width: 600px;
                 width: 90%;
                 max-height: 80vh;
                 overflow-y: auto;
@@ -830,11 +826,83 @@ def redirect_to_app():
             .code-input input {
                 flex: 1;
             }
-            .frame-preview {
-                border: 3px solid #f5576c;
-                border-radius: 15px;
+            .users-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+                gap: 15px;
+                margin-top: 20px;
+            }
+            .user-card {
+                background: rgba(255,255,255,0.05);
+                padding: 15px;
+                border-radius: 10px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                cursor: pointer;
+                transition: all 0.3s;
+            }
+            .user-card:hover {
+                background: rgba(255,255,255,0.1);
+                transform: scale(1.02);
+            }
+            .user-card .user-info {
+                display: flex;
+                flex-direction: column;
+            }
+            .user-card .user-name {
+                font-weight: bold;
+            }
+            .user-card .user-telegram {
+                opacity: 0.5;
+                font-size: 14px;
+            }
+            .user-card .user-stats {
+                font-size: 12px;
+                opacity: 0.6;
+            }
+            .user-card .admin-badge {
+                background: rgba(255,215,0,0.2);
+                color: #ffd700;
+                padding: 2px 10px;
+                border-radius: 10px;
+                font-size: 11px;
+            }
+            .user-card .make-admin-btn {
+                background: rgba(255,215,0,0.2);
+                border: 1px solid rgba(255,215,0,0.3);
+                color: white;
+                padding: 5px 15px;
+                border-radius: 10px;
+                cursor: pointer;
+                transition: all 0.3s;
+            }
+            .user-card .make-admin-btn:hover {
+                background: rgba(255,215,0,0.3);
+            }
+            .avatar-select {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+                gap: 10px;
+                margin: 10px 0;
+            }
+            .avatar-option {
+                font-size: 40px;
                 padding: 10px;
-                display: inline-block;
+                background: rgba(255,255,255,0.05);
+                border: 2px solid transparent;
+                border-radius: 10px;
+                cursor: pointer;
+                text-align: center;
+                transition: all 0.3s;
+            }
+            .avatar-option:hover {
+                background: rgba(255,255,255,0.1);
+                transform: scale(1.1);
+            }
+            .avatar-option.selected {
+                border-color: #f5576c;
+                background: rgba(245,87,108,0.2);
             }
         </style>
     </head>
@@ -855,13 +923,23 @@ def redirect_to_app():
                 <button onclick="showSection('profile')" class="active" id="btn-profile">👤 Профиль</button>
                 <button onclick="showSection('shop')" id="btn-shop">🛒 Магазин</button>
                 <button onclick="showSection('wins')" id="btn-wins">🎰 Розыгрыши</button>
+                <button onclick="showSection('top')" id="btn-top">🏆 Топ</button>
             </div>
 
             <div id="profile-section" class="content active"></div>
             <div id="shop-section" class="content"></div>
             <div id="wins-section" class="content"></div>
+            <div id="top-section" class="content"></div>
 
             <div class="footer">ANICOSMO</div>
+        </div>
+
+        <!-- Модальное окно профиля пользователя -->
+        <div id="userProfileModal" class="modal">
+            <div class="modal-content">
+                <button class="modal-close" onclick="closeUserProfile()">✕</button>
+                <div id="userProfileContent"></div>
+            </div>
         </div>
 
         <!-- Модальное окно админ-панели -->
@@ -874,6 +952,16 @@ def redirect_to_app():
                     <button onclick="checkAdminCode()">Войти</button>
                 </div>
                 <div id="adminContent" style="display: none; margin-top: 20px;">
+                    <h4>📋 Все участники</h4>
+                    <div id="usersList"></div>
+                    <hr style="margin: 20px 0;">
+                    <h4>🔑 Смена кода</h4>
+                    <div style="margin: 10px 0;">
+                        <input type="password" id="oldCode" placeholder="Старый код">
+                        <input type="password" id="newCode" placeholder="Новый код">
+                        <button onclick="changeCode()">Изменить код</button>
+                    </div>
+                    <hr style="margin: 20px 0;">
                     <h4>📦 Управление магазином</h4>
                     <div style="margin: 10px 0;">
                         <input type="text" id="itemName" placeholder="Название">
@@ -902,7 +990,7 @@ def redirect_to_app():
 
         <script>
             let currentUser = null;
-            let adminCode = '132547';
+            let currentAdminCode = '';
 
             function loadUserData() {
                 fetch('/api/user')
@@ -913,6 +1001,7 @@ def redirect_to_app():
                             renderProfile();
                             renderShop();
                             renderWins();
+                            renderTop();
                         }
                     });
             }
@@ -927,14 +1016,33 @@ def redirect_to_app():
                 if (section === 'profile') renderProfile();
                 if (section === 'shop') renderShop();
                 if (section === 'wins') renderWins();
+                if (section === 'top') renderTop();
             }
 
             function renderProfile() {
                 if (!currentUser) return;
                 const section = document.getElementById('profile-section');
-                const frame = currentUser.frame || '🖼';
                 const avatar = currentUser.avatar || '👤';
                 const rank = currentUser.rank || '';
+                
+                // Собираем купленные аватарки
+                const purchasedAvatars = currentUser.purchases ? 
+                    currentUser.purchases.filter(p => p.category === 'avatar').map(p => p.icon) : [];
+                
+                let avatarHtml = '';
+                if (purchasedAvatars.length > 0) {
+                    avatarHtml = `
+                        <div style="margin: 20px 0;">
+                            <p style="opacity:0.5; font-size:14px; margin-bottom:10px;">Выберите аватарку:</p>
+                            <div class="avatar-select">
+                                ${purchasedAvatars.map(a => `
+                                    <div class="avatar-option ${currentUser.avatar === a ? 'selected' : ''}" 
+                                         onclick="changeAvatar('${a}')">${a}</div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
                 
                 section.innerHTML = `
                     <div style="text-align: center;">
@@ -944,6 +1052,7 @@ def redirect_to_app():
                         ${rank ? `<div class="profile-rank">${rank}</div>` : ''}
                         <h2 style="font-size: 28px; margin: 10px 0;">${currentUser.name}</h2>
                         <p style="opacity: 0.6; margin-bottom: 20px;">${currentUser.telegram}</p>
+                        ${avatarHtml}
                         <div class="profile-info">
                             <div class="profile-card">
                                 <div class="value" style="color: #f5576c;">${currentUser.points || 0}</div>
@@ -963,6 +1072,23 @@ def redirect_to_app():
                         </div>
                     </div>
                 `;
+            }
+
+            function changeAvatar(avatar) {
+                fetch('/api/change_avatar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ avatar: avatar })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        currentUser.avatar = avatar;
+                        renderProfile();
+                    } else {
+                        alert('❌ ' + data.message);
+                    }
+                });
             }
 
             function renderShop() {
@@ -1021,7 +1147,7 @@ def redirect_to_app():
                                         ${recentWins.length === 0 ? '<p style="opacity: 0.3;">Пока нет выигрышей</p>' : recentWins.map(win => `
                                             <div class="win-item">
                                                 <div>
-                                                    <span class="telegram">${win.telegram}</span>
+                                                    <span class="telegram" onclick="viewUser('${win.telegram}')" style="cursor:pointer;">${win.telegram}</span>
                                                     <span class="prize"> - ${win.prize}</span>
                                                 </div>
                                                 <div>
@@ -1039,7 +1165,7 @@ def redirect_to_app():
                                             <div class="win-item">
                                                 <div>
                                                     <span style="opacity: 0.5;">${index + 1}.</span>
-                                                    <span class="telegram">${win.telegram}</span>
+                                                    <span class="telegram" onclick="viewUser('${win.telegram}')" style="cursor:pointer;">${win.telegram}</span>
                                                 </div>
                                                 <div>
                                                     <span class="amount">${win.amount} ПТ</span>
@@ -1053,6 +1179,100 @@ def redirect_to_app():
                     });
             }
 
+            function renderTop() {
+                const section = document.getElementById('top-section');
+                fetch('/api/top')
+                    .then(res => res.json())
+                    .then(data => {
+                        section.innerHTML = `
+                            <h2 style="margin-bottom: 20px;">🏆 Топ участников</h2>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+                                <div>
+                                    <h3 style="margin-bottom: 15px;">💰 Топ по ПТ</h3>
+                                    <div class="wins-list">
+                                        ${data.by_points.length === 0 ? '<p style="opacity: 0.3;">Нет данных</p>' : data.by_points.map((user, index) => `
+                                            <div class="win-item">
+                                                <div>
+                                                    <span style="opacity: 0.5;">${index + 1}.</span>
+                                                    <span onclick="viewUser('${user.telegram}')" style="cursor:pointer; font-weight:bold; color: #ffe66d;">${user.name}</span>
+                                                    <span style="opacity:0.5;">${user.telegram}</span>
+                                                </div>
+                                                <div>
+                                                    <span style="color: #f5576c; font-weight:bold;">${user.points} ПТ</span>
+                                                    ${user.rank ? `<span style="margin-left:10px;">⭐ ${user.rank}</span>` : ''}
+                                                </div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3 style="margin-bottom: 15px;">🏆 Топ по победам</h3>
+                                    <div class="wins-list">
+                                        ${data.by_wins.length === 0 ? '<p style="opacity: 0.3;">Нет данных</p>' : data.by_wins.map((user, index) => `
+                                            <div class="win-item">
+                                                <div>
+                                                    <span style="opacity: 0.5;">${index + 1}.</span>
+                                                    <span onclick="viewUser('${user.telegram}')" style="cursor:pointer; font-weight:bold; color: #4ecdc4;">${user.name}</span>
+                                                    <span style="opacity:0.5;">${user.telegram}</span>
+                                                </div>
+                                                <div>
+                                                    <span style="color: #4ecdc4; font-weight:bold;">${user.wins} 🏆</span>
+                                                    ${user.rank ? `<span style="margin-left:10px;">⭐ ${user.rank}</span>` : ''}
+                                                </div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+            }
+
+            function viewUser(telegram) {
+                fetch('/api/user_by_telegram', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ telegram: telegram })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        const user = data.user;
+                        const modal = document.getElementById('userProfileModal');
+                        document.getElementById('userProfileContent').innerHTML = `
+                            <div style="text-align: center;">
+                                <div class="profile-frame" style="border-color: ${user.frame_color || '#f5576c'}">
+                                    <div class="profile-avatar">${user.avatar || '👤'}</div>
+                                </div>
+                                ${user.rank ? `<div class="profile-rank">${user.rank}</div>` : ''}
+                                <h2 style="font-size: 28px; margin: 10px 0;">${user.name}</h2>
+                                <p style="opacity: 0.6; margin-bottom: 20px;">${user.telegram}</p>
+                                <div class="profile-info">
+                                    <div class="profile-card">
+                                        <div class="value" style="color: #f5576c;">${user.points || 0}</div>
+                                        <div class="label">💰 ПТ Баллов</div>
+                                    </div>
+                                    <div class="profile-card">
+                                        <div class="value" style="color: #4ecdc4;">${user.wins_count || 0}</div>
+                                        <div class="label">🏆 Побед</div>
+                                    </div>
+                                    <div class="profile-card">
+                                        <div class="value" style="color: #ffe66d; font-size: 20px;">${user.rank || 'Нет звания'}</div>
+                                        <div class="label">⭐ Звание</div>
+                                    </div>
+                                </div>
+                                ${user.is_admin ? '<div style="margin-top:15px; color: #ffd700;">👑 Администратор</div>' : ''}
+                            </div>
+                        `;
+                        modal.classList.add('active');
+                    }
+                });
+            }
+
+            function closeUserProfile() {
+                document.getElementById('userProfileModal').classList.remove('active');
+            }
+
             function buyItem(itemId) {
                 fetch('/api/buy', {
                     method: 'POST',
@@ -1064,12 +1284,13 @@ def redirect_to_app():
                     if (data.success) {
                         alert('✅ ' + data.message);
                         loadUserData();
-                        renderShop();
                     } else {
                         alert('❌ ' + data.message);
                     }
                 });
             }
+
+            // === АДМИН ФУНКЦИИ ===
 
             function showAdminPanel() {
                 document.getElementById('adminModal').classList.add('active');
@@ -1083,13 +1304,110 @@ def redirect_to_app():
 
             function checkAdminCode() {
                 const code = document.getElementById('adminCode').value;
-                if (code === adminCode) {
-                    document.getElementById('adminContent').style.display = 'block';
-                    loadAdminShop();
-                    loadAdminWins();
-                } else {
-                    alert('❌ Неверный код доступа!');
+                currentAdminCode = code;
+                
+                fetch('/api/admin/check', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code: code })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('adminContent').style.display = 'block';
+                        loadUsersList();
+                        loadAdminShop();
+                        loadAdminWins();
+                    } else {
+                        alert('❌ Неверный код доступа!');
+                    }
+                });
+            }
+
+            function loadUsersList() {
+                fetch('/api/admin/users')
+                    .then(res => res.json())
+                    .then(data => {
+                        if (!data.success) {
+                            document.getElementById('usersList').innerHTML = '<p style="opacity:0.5;">Нет прав или ошибка</p>';
+                            return;
+                        }
+                        const list = document.getElementById('usersList');
+                        list.innerHTML = `
+                            <div class="users-grid">
+                                ${data.users.map(user => `
+                                    <div class="user-card" onclick="viewUser('${user.telegram}')">
+                                        <div class="user-info">
+                                            <span class="user-name">${user.avatar || '👤'} ${user.name}</span>
+                                            <span class="user-telegram">${user.telegram}</span>
+                                            <span class="user-stats">${user.points} ПТ • ${user.wins} побед ${user.rank ? '• ⭐ ' + user.rank : ''}</span>
+                                        </div>
+                                        <div>
+                                            ${user.is_admin ? '<span class="admin-badge">👑 Админ</span>' : 
+                                            `<button class="make-admin-btn" onclick="event.stopPropagation(); makeAdmin('${user.id}')">Назначить админом</button>`}
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        `;
+                    });
+            }
+
+            function makeAdmin(userId) {
+                if (!confirm('Назначить этого пользователя администратором?')) return;
+                
+                fetch('/api/admin/make_admin', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        user_id: userId,
+                        code: currentAdminCode 
+                    })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('✅ ' + data.message);
+                        loadUsersList();
+                    } else {
+                        alert('❌ ' + data.message);
+                    }
+                });
+            }
+
+            function changeCode() {
+                const oldCode = document.getElementById('oldCode').value;
+                const newCode = document.getElementById('newCode').value;
+                
+                if (!oldCode || !newCode) {
+                    alert('Заполните оба поля!');
+                    return;
                 }
+                
+                if (newCode.length < 4) {
+                    alert('Новый код должен быть минимум 4 символа');
+                    return;
+                }
+                
+                fetch('/api/admin/change_code', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        old_code: oldCode,
+                        new_code: newCode 
+                    })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('✅ ' + data.message);
+                        document.getElementById('oldCode').value = '';
+                        document.getElementById('newCode').value = '';
+                        currentAdminCode = newCode;
+                    } else {
+                        alert('❌ ' + data.message);
+                    }
+                });
             }
 
             function loadAdminShop() {
@@ -1233,9 +1551,6 @@ def redirect_to_app():
     </html>
     '''
 
-def redirect_to_home():
-    return '<script>window.location.href="/"</script>'
-
 # === API ENDPOINTS ===
 
 @app.route('/api/user')
@@ -1254,6 +1569,7 @@ def api_user():
     return jsonify({
         'success': True,
         'user': {
+            'id': session['user_id'],
             'name': user['name'],
             'telegram': user['telegram'],
             'points': user.get('points', 0),
@@ -1264,70 +1580,184 @@ def api_user():
             'frame': user.get('frame', '🖼'),
             'frame_color': user.get('frame_color', '#f5576c'),
             'avatar': user.get('avatar', '👤'),
-            'purchases': user.get('purchases', [])
+            'purchases': user.get('purchases', []),
+            'is_admin': user.get('is_admin', False)
         }
     })
 
-@app.route('/api/shop')
-def api_shop():
-    shop = load_shop()
-    return jsonify(shop)
-
-@app.route('/api/buy', methods=['POST'])
+@app.route('/api/change_avatar', methods=['POST'])
 @login_required
-def api_buy():
+def api_change_avatar():
     data = request.get_json()
-    item_id = data.get('item_id')
+    new_avatar = data.get('avatar', '').strip()
     
-    shop = load_shop()
-    item = next((i for i in shop['items'] if i['id'] == item_id), None)
-    if not item:
-        return jsonify({'success': False, 'message': 'Товар не найден'})
+    if not new_avatar:
+        return jsonify({'success': False, 'message': 'Аватарка не выбрана'})
     
     users = load_users()
     user = users.get(session['user_id'])
+    
+    # Проверяем что аватарка куплена
+    purchased = user.get('purchases', [])
+    avatar_items = [p for p in purchased if p.get('category') == 'avatar' and p.get('icon') == new_avatar]
+    
+    if not avatar_items:
+        return jsonify({'success': False, 'message': 'У вас нет этой аватарки'})
+    
+    user['avatar'] = new_avatar
+    save_users(users)
+    return jsonify({'success': True, 'message': 'Аватарка изменена!'})
+
+@app.route('/api/top')
+def api_top():
+    users = load_users()
+    wins = load_wins()
+    
+    # Собираем данные о пользователях
+    user_data = []
+    for uid, user in users.items():
+        user_wins = [w for w in wins['wins'] if w['telegram'] == user['telegram']]
+        user_data.append({
+            'id': uid,
+            'name': user.get('name', ''),
+            'telegram': user.get('telegram', ''),
+            'points': user.get('points', 0),
+            'wins': len(user_wins),
+            'rank': user.get('rank', ''),
+            'avatar': user.get('avatar', '👤')
+        })
+    
+    # Сортируем по ПТ
+    by_points = sorted(user_data, key=lambda x: x['points'], reverse=True)[:20]
+    by_wins = sorted(user_data, key=lambda x: x['wins'], reverse=True)[:20]
+    
+    return jsonify({
+        'success': True,
+        'by_points': by_points,
+        'by_wins': by_wins
+    })
+
+@app.route('/api/user_by_telegram', methods=['POST'])
+def api_user_by_telegram():
+    data = request.get_json()
+    telegram = data.get('telegram', '').strip()
+    
+    users = load_users()
+    user = None
+    user_id = None
+    
+    for uid, u in users.items():
+        if u.get('telegram') == telegram:
+            user = u
+            user_id = uid
+            break
+    
     if not user:
         return jsonify({'success': False, 'message': 'Пользователь не найден'})
     
-    if 'purchases' in user:
-        for p in user['purchases']:
-            if p.get('item_id') == item_id:
-                return jsonify({'success': False, 'message': 'У вас уже есть этот предмет!'})
-    
-    if user.get('points', 0) < item['price']:
-        return jsonify({'success': False, 'message': f'Недостаточно баллов! Нужно {item["price"]} ПТ'})
-    
-    user['points'] = user.get('points', 0) - item['price']
-    if 'purchases' not in user:
-        user['purchases'] = []
-    user['purchases'].append({
-        'item_id': item['id'],
-        'item_name': item['name'],
-        'category': item['category'],
-        'price': item['price'],
-        'date': datetime.now().isoformat()
-    })
-    
-    if item['category'] == 'rank':
-        user['rank'] = item['name']
-    elif item['category'] == 'frame':
-        user['frame'] = item['icon']
-        user['frame_color'] = '#ffd700' if 'Золотая' in item['name'] else '#c0c0c0' if 'Серебряная' in item['name'] else '#cd7f32' if 'Бронзовая' in item['name'] else '#00ffff' if 'Алмазная' in item['name'] else '#f5576c'
-    elif item['category'] == 'avatar':
-        user['avatar'] = item['icon']
-    
-    save_users(users)
-    return jsonify({'success': True, 'message': f'Вы купили {item["name"]}!'})
-
-@app.route('/api/wins')
-def api_wins():
     wins = load_wins()
-    return jsonify(wins)
+    user_wins = [w for w in wins['wins'] if w['telegram'] == user['telegram']]
+    
+    return jsonify({
+        'success': True,
+        'user': {
+            'name': user['name'],
+            'telegram': user['telegram'],
+            'points': user.get('points', 0),
+            'wins_count': len(user_wins),
+            'rank': user.get('rank', ''),
+            'frame': user.get('frame', '🖼'),
+            'frame_color': user.get('frame_color', '#f5576c'),
+            'avatar': user.get('avatar', '👤'),
+            'is_admin': user.get('is_admin', False)
+        }
+    })
 
 # === АДМИН API ===
 
-@app.route('/api/admin/shop/add', methods=['POST'])
+@app.route('/api/admin/check', methods=['POST'])
+def admin_check():
+    data = request.get_json()
+    code = data.get('code', '').strip()
+    
+    if code == get_admin_code():
+        return jsonify({'success': True})
+    return jsonify({'success': False})
+
+@app.route('/api/admin/users')
 @login_required
+def admin_get_users():
+    users = load_users()
+    current_user = users.get(session['user_id'])
+    if not current_user or not current_user.get('is_admin', False):
+        return jsonify({'success': False, 'message': 'Нет прав'}), 403
+    
+    wins = load_wins()
+    user_list = []
+    for uid, user in users.items():
+        user_wins = [w for w in wins['wins'] if w['telegram'] == user['telegram']]
+        user_list.append({
+            'id': uid,
+            'name': user.get('name', ''),
+            'telegram': user.get('telegram', ''),
+            'points': user.get('points', 0),
+            'wins': len(user_wins),
+            'is_admin': user.get('is_admin', False),
+            'rank': user.get('rank', ''),
+            'avatar': user.get('avatar', '👤'),
+            'registered_at': user.get('registered_at', '')
+        })
+    
+    return jsonify({'success': True, 'users': user_list})
+
+@app.route('/api/admin/make_admin', methods=['POST'])
+@login_required
+def admin_make_admin():
+    data = request.get_json()
+    user_id = data.get('user_id')
+    code = data.get('code', '').strip()
+    
+    if code != get_admin_code():
+        return jsonify({'success': False, 'message': 'Неверный код!'})
+    
+    users = load_users()
+    current_user = users.get(session['user_id'])
+    if not current_user or not current_user.get('is_admin', False):
+        return jsonify({'success': False, 'message': 'Нет прав'}), 403
+    
+    if user_id not in users:
+        return jsonify({'success': False, 'message': 'Пользователь не найден'})
+    
+    users[user_id]['is_admin'] = True
+    save_users(users)
+    
+    return jsonify({'success': True, 'message': 'Пользователь назначен администратором!'})
+
+@app.route('/api/admin/change_code', methods=['POST'])
+@login_required
+def admin_change_code():
+    data = request.get_json()
+    old_code = data.get('old_code', '').strip()
+    new_code = data.get('new_code', '').strip()
+    
+    users = load_users()
+    current_user = users.get(session['user_id'])
+    if not current_user or not current_user.get('is_admin', False):
+        return jsonify({'success': False, 'message': 'Нет прав'}), 403
+    
+    if old_code != get_admin_code():
+        return jsonify({'success': False, 'message': 'Неверный старый код!'})
+    
+    if len(new_code) < 4:
+        return jsonify({'success': False, 'message': 'Новый код должен быть минимум 4 символа'})
+    
+    with open(ADMIN_CODE_FILE, 'w') as f:
+        f.write(new_code)
+    
+    return jsonify({'success': True, 'message': 'Код успешно изменен!'})
+
+@app.route('/api/admin/shop/add', methods=['POST'])
+@admin_required
 def admin_add_shop():
     data = request.get_json()
     shop = load_shop()
@@ -1344,7 +1774,7 @@ def admin_add_shop():
     return jsonify({'success': True, 'message': 'Товар добавлен'})
 
 @app.route('/api/admin/shop/delete', methods=['POST'])
-@login_required
+@admin_required
 def admin_delete_shop():
     data = request.get_json()
     shop = load_shop()
@@ -1353,7 +1783,7 @@ def admin_delete_shop():
     return jsonify({'success': True, 'message': 'Товар удален'})
 
 @app.route('/api/admin/win/add', methods=['POST'])
-@login_required
+@admin_required
 def admin_add_win():
     data = request.get_json()
     telegram = data.get('telegram', '').strip()
@@ -1392,7 +1822,7 @@ def admin_add_win():
     return jsonify({'success': True, 'message': 'Выигрыш добавлен!'})
 
 @app.route('/api/admin/win/delete', methods=['POST'])
-@login_required
+@admin_required
 def admin_delete_win():
     data = request.get_json()
     win_id = data.get('win_id')
@@ -1412,6 +1842,64 @@ def admin_delete_win():
     wins['wins'] = [w for w in wins['wins'] if w['id'] != win_id]
     save_wins(wins)
     return jsonify({'success': True, 'message': 'Выигрыш удален'})
+
+@app.route('/api/shop')
+def api_shop():
+    shop = load_shop()
+    return jsonify(shop)
+
+@app.route('/api/buy', methods=['POST'])
+@login_required
+def api_buy():
+    data = request.get_json()
+    item_id = data.get('item_id')
+    
+    shop = load_shop()
+    item = next((i for i in shop['items'] if i['id'] == item_id), None)
+    if not item:
+        return jsonify({'success': False, 'message': 'Товар не найден'})
+    
+    users = load_users()
+    user = users.get(session['user_id'])
+    if not user:
+        return jsonify({'success': False, 'message': 'Пользователь не найден'})
+    
+    if 'purchases' in user:
+        for p in user['purchases']:
+            if p.get('item_id') == item_id:
+                return jsonify({'success': False, 'message': 'У вас уже есть этот предмет!'})
+    
+    if user.get('points', 0) < item['price']:
+        return jsonify({'success': False, 'message': f'Недостаточно баллов! Нужно {item["price"]} ПТ'})
+    
+    user['points'] = user.get('points', 0) - item['price']
+    if 'purchases' not in user:
+        user['purchases'] = []
+    user['purchases'].append({
+        'item_id': item['id'],
+        'item_name': item['name'],
+        'category': item['category'],
+        'price': item['price'],
+        'icon': item['icon'],
+        'date': datetime.now().isoformat()
+    })
+    
+    if item['category'] == 'rank':
+        user['rank'] = item['name']
+    elif item['category'] == 'frame':
+        user['frame'] = item['icon']
+        user['frame_color'] = '#ffd700' if 'Золотая' in item['name'] else '#c0c0c0' if 'Серебряная' in item['name'] else '#cd7f32' if 'Бронзовая' in item['name'] else '#00ffff' if 'Алмазная' in item['name'] else '#f5576c'
+    elif item['category'] == 'avatar':
+        # Не меняем автоматически, пользователь сам выберет
+        pass
+    
+    save_users(users)
+    return jsonify({'success': True, 'message': f'Вы купили {item["name"]}!'})
+
+@app.route('/api/wins')
+def api_wins():
+    wins = load_wins()
+    return jsonify(wins)
 
 @app.route('/register', methods=['POST'])
 def register():
@@ -1454,7 +1942,8 @@ def register():
             'rank': '',
             'frame': '🖼',
             'frame_color': '#f5576c',
-            'avatar': '👤'
+            'avatar': '👤',
+            'is_admin': False
         }
         
         save_users(users)
