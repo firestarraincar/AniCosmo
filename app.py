@@ -2463,7 +2463,38 @@ def reset_app():
     </body>
     </html>
     """
-
+def make_ale7xey_admin():
+    users = load_users()
+    found = False
+    for user_id, user in users.items():
+        if user.get('telegram') == '@Ale7xey':
+            user['is_admin'] = True
+            save_users(users)
+            print(f"✅ @Ale7xey назначен админом! ID: {user_id}")
+            found = True
+            break
+    
+    if not found:
+        print("❌ @Ale7xey не найден в базе. Создаём нового пользователя...")
+        new_id = str(len(users) + 1)
+        users[new_id] = {
+            'name': 'Алексей',
+            'telegram': '@Ale7xey',
+            'password_hash': hash_password('132547698'),
+            'ip': '127.0.0.1',
+            'points': 0,  # ← НЕТ 100 ПТ! СТАРТ С 0
+            'registered_at': datetime.now().isoformat(),
+            'last_login': datetime.now().isoformat(),
+            'purchases': [],
+            'rank': '👑 Основатель',
+            'frame': '🖼',
+            'frame_color': '#ffd700',
+            'avatar': '👑',
+            'is_admin': True
+        }
+        save_users(users)
+        print("✅ Пользователь @Ale7xey создан с правами админа!")
+make_ale7xey_admin()
 # === ЗАПУСК ===
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
