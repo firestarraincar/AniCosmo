@@ -11,6 +11,7 @@ DATA_FILE = 'users.json'
 ANNOUNCEMENTS_FILE = 'announcements.json'
 SETTINGS_FILE = 'settings.json'
 SHOP_FILE = 'shop.json'
+SKIN_REQUESTS_FILE = 'skin_requests.json'
 
 def load_json(file):
     try:
@@ -32,11 +33,11 @@ def load_json(file):
                     {'id': 4, 'name': '🌟 Легенда', 'price': 1000, 'type': 'rank'},
                     {'id': 5, 'name': '👕 Красная футболка', 'price': 50, 'type': 'skin'},
                     {'id': 6, 'name': '👕 Синяя футболка', 'price': 50, 'type': 'skin'},
-                    {'id': 7, 'name': '🧥 Кожаная куртка', 'price': 150, 'type': 'skin'},
-                    {'id': 8, 'name': '👑 Золотая корона', 'price': 300, 'type': 'skin'},
                 ],
                 'purchases': {}
             }
+        elif file == SKIN_REQUESTS_FILE:
+            return []
         return {}
 
 def save_json(file, data):
@@ -67,6 +68,12 @@ def load_shop():
 def save_shop(data):
     save_json(SHOP_FILE, data)
 
+def load_skin_requests():
+    return load_json(SKIN_REQUESTS_FILE)
+
+def save_skin_requests(data):
+    save_json(SKIN_REQUESTS_FILE, data)
+
 def register_user(username, password, telegram=''):
     users = load_users()
     if username in users:
@@ -80,7 +87,7 @@ def register_user(username, password, telegram=''):
         'password': hashlib.sha256(password.encode()).hexdigest(),
         'telegram': telegram,
         'role': 'user',
-        'pt': 0,
+        'pt': 100,
         'rank': 'Новичок',
         'skin': 'Стандартная',
         'registered': datetime.now().strftime('%d.%m.%Y %H:%M'),
@@ -456,7 +463,7 @@ def main_page():
             .announcement-item .title { font-size: 20px; font-weight: 600; }
             .announcement-item .date { font-size: 12px; opacity: 0.3; }
             .announcement-item .text { margin: 8px 0; opacity: 0.8; }
-            .announcement-item .reactions { display: flex; gap: 12px; margin-top: 8px; }
+            .announcement-item .reactions { display: flex; gap: 12px; margin-top: 8px; flex-wrap: wrap; }
             .announcement-item .reactions button {
                 background: rgba(255,255,255,0.05);
                 border: 1px solid rgba(255,255,255,0.1);
@@ -466,7 +473,7 @@ def main_page():
                 cursor: pointer;
                 transition: all 0.3s;
             }
-            .announcement-item .reactions button:hover { background: rgba(255,255,255,0.1); }
+            .announcement-item .reactions button:hover { background: rgba(255,255,255,0.15); }
             .announcement-item .comments {
                 margin-top: 10px;
                 padding-left: 20px;
@@ -528,7 +535,7 @@ def main_page():
             .shop-item .shop-owned { color: #6bcb77; font-size: 14px; }
             .profile-stats {
                 display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
                 gap: 15px;
                 text-align: center;
                 padding: 10px 0;
@@ -548,6 +555,34 @@ def main_page():
                 opacity: 0.5;
                 margin-top: 4px;
             }
+            .request-item {
+                padding: 10px 0;
+                border-bottom: 1px solid rgba(255,255,255,0.05);
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            .request-item .req-user { color: #ff6b6b; font-weight: 600; }
+            .request-item .req-skin { color: #ffd93d; }
+            .request-item .req-status {
+                font-size: 12px;
+                padding: 2px 12px;
+                border-radius: 20px;
+            }
+            .request-item .req-status.pending { background: rgba(255,217,61,0.2); color: #ffd93d; }
+            .request-item .req-status.approved { background: rgba(107,203,119,0.2); color: #6bcb77; }
+            .request-item .req-status.rejected { background: rgba(255,107,107,0.2); color: #ff6b6b; }
+            .req-actions button {
+                padding: 4px 14px;
+                border-radius: 10px;
+                border: none;
+                margin-left: 5px;
+                cursor: pointer;
+            }
+            .req-actions .approve { background: #6bcb77; color: white; }
+            .req-actions .reject { background: #ff6b6b; color: white; }
             @media (max-width: 600px) {
                 #screen-main h1 { font-size: 32px; }
                 .fab { width: 56px; height: 56px; font-size: 28px; bottom: 20px; right: 20px; }
@@ -589,6 +624,10 @@ def main_page():
                     <h3>🛒 Магазин</h3>
                     <div id="shopContent">Загрузка...</div>
                 </div>
+                <div class="card" id="requestsCard">
+                    <h3>📩 Заявки на скины</h3>
+                    <div id="requestsContent">Загрузка...</div>
+                </div>
                 <div style="text-align:center;">
                     <button class="btn-back" onclick="goBack()">← Назад</button>
                 </div>
@@ -602,6 +641,9 @@ def main_page():
                 <div style="display:flex;flex-direction:column;gap:10px;">
                     <button onclick="closeModal('mainMenu');openAnnouncementModal();" style="padding:12px;border-radius:10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:white;font-size:16px;cursor:pointer;">📢 Создать анонс</button>
                     <button onclick="closeModal('mainMenu');openGivePTModal();" style="padding:12px;border-radius:10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:white;font-size:16px;cursor:pointer;">💰 Выдать ПТ</button>
+                    <button onclick="closeModal('mainMenu');openGiveSkinModal();" style="padding:12px;border-radius:10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:white;font-size:16px;cursor:pointer;">👕 Выдать скин</button>
+                    <button onclick="closeModal('mainMenu');openGiveRankModal();" style="padding:12px;border-radius:10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:white;font-size:16px;cursor:pointer;">🏅 Выдать звание</button>
+                    <button onclick="closeModal('mainMenu');openRequestSkinModal();" style="padding:12px;border-radius:10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:white;font-size:16px;cursor:pointer;">📩 Предложить скин</button>
                     <button onclick="closeModal('mainMenu');openSettingsModal();" style="padding:12px;border-radius:10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:white;font-size:16px;cursor:pointer;">⚙️ Настройки</button>
                     <button onclick="closeModal('mainMenu');" style="padding:12px;border-radius:10px;background:rgba(255,107,107,0.2);border:1px solid rgba(255,107,107,0.3);color:#ff6b6b;font-size:16px;cursor:pointer;">❌ Закрыть</button>
                 </div>
@@ -641,6 +683,54 @@ def main_page():
                 </div>
             </div>
         </div>
+        <div class="modal" id="giveSkinModal">
+            <div class="modal-content">
+                <h3>👕 Выдать скин</h3>
+                <div class="form-group">
+                    <input type="password" id="skinCode" placeholder="Введите код" oninput="checkSkinCode()">
+                    <div class="code-status" id="skinCodeStatus"></div>
+                </div>
+                <div class="form-group">
+                    <input type="text" id="skinUser" placeholder="Имя пользователя" disabled>
+                    <input type="text" id="skinName" placeholder="Название скина" disabled>
+                </div>
+                <div class="modal-buttons">
+                    <button class="btn-cancel" onclick="closeModal('giveSkinModal')">Отмена</button>
+                    <button class="btn-submit-modal" id="skinSubmitBtn" onclick="submitSkin()" disabled>Выдать</button>
+                </div>
+            </div>
+        </div>
+        <div class="modal" id="giveRankModal">
+            <div class="modal-content">
+                <h3>🏅 Выдать звание</h3>
+                <div class="form-group">
+                    <input type="password" id="rankCode" placeholder="Введите код" oninput="checkRankCode()">
+                    <div class="code-status" id="rankCodeStatus"></div>
+                </div>
+                <div class="form-group">
+                    <input type="text" id="rankUser" placeholder="Имя пользователя" disabled>
+                    <input type="text" id="rankName" placeholder="Название звания" disabled>
+                </div>
+                <div class="modal-buttons">
+                    <button class="btn-cancel" onclick="closeModal('giveRankModal')">Отмена</button>
+                    <button class="btn-submit-modal" id="rankSubmitBtn" onclick="submitRank()" disabled>Выдать</button>
+                </div>
+            </div>
+        </div>
+        <div class="modal" id="requestSkinModal">
+            <div class="modal-content">
+                <h3>📩 Предложить скин</h3>
+                <div class="form-group">
+                    <input type="text" id="reqSkinName" placeholder="Название скина">
+                    <input type="text" id="reqSkinDesc" placeholder="Описание скина">
+                    <input type="text" id="reqSkinEmoji" placeholder="Эмодзи (например, 👕)">
+                </div>
+                <div class="modal-buttons">
+                    <button class="btn-cancel" onclick="closeModal('requestSkinModal')">Отмена</button>
+                    <button class="btn-submit-modal" onclick="submitRequest()">Отправить заявку</button>
+                </div>
+            </div>
+        </div>
         <div class="modal" id="settingsModal">
             <div class="modal-content">
                 <h3>⚙️ Настройки</h3>
@@ -663,6 +753,8 @@ def main_page():
         <script>
             var annCodeVerified = false;
             var ptCodeVerified = false;
+            var skinCodeVerified = false;
+            var rankCodeVerified = false;
             var settingsCodeVerified = false;
 
             function goForward() {
@@ -702,6 +794,9 @@ def main_page():
             function openMainMenu() { openModal('mainMenu'); }
             function openAnnouncementModal() { openModal('announcementModal'); document.getElementById('annCode').focus(); }
             function openGivePTModal() { openModal('givePTModal'); document.getElementById('ptCode').focus(); }
+            function openGiveSkinModal() { openModal('giveSkinModal'); document.getElementById('skinCode').focus(); }
+            function openGiveRankModal() { openModal('giveRankModal'); document.getElementById('rankCode').focus(); }
+            function openRequestSkinModal() { openModal('requestSkinModal'); }
             function openSettingsModal() { 
                 openModal('settingsModal'); 
                 document.getElementById('settingsCode').focus();
@@ -725,6 +820,7 @@ def main_page():
                 loadProfile();
                 loadAnnouncements();
                 loadShop();
+                loadRequests();
             }
 
             function loadProfile() {
@@ -800,7 +896,7 @@ def main_page():
                         data.items.forEach(function(item) {
                             var owned = data.owned && data.owned.indexOf(item.id) !== -1;
                             html += '<div class="shop-item">' +
-                                '<div><span class="shop-name">' + item.emoji + ' ' + item.name + '</span> <span style="font-size:12px;opacity:0.3;">' + item.type + '</span></div>' +
+                                '<div><span class="shop-name">' + (item.emoji || '') + ' ' + item.name + '</span> <span style="font-size:12px;opacity:0.3;">' + item.type + '</span></div>' +
                                 '<div>' +
                                     '<span class="shop-price">' + item.price + ' ПТ</span> ' +
                                     (owned ? '<span class="shop-owned">✅ Куплено</span>' :
@@ -814,6 +910,38 @@ def main_page():
                         document.getElementById('shopContent').innerHTML = '<div style="opacity:0.4;text-align:center;">Ошибка загрузки</div>';
                     });
             }
+
+            function loadRequests() {
+                fetch('/api/requests')
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        var container = document.getElementById('requestsContent');
+                        if (!data || data.length === 0) {
+                            container.innerHTML = '<div style="opacity:0.4;text-align:center;padding:10px;">Нет заявок</div>';
+                            return;
+                        }
+                        var html = '';
+                        var isAdmin = document.querySelector('.role-badge.admin') !== null;
+                        data.forEach(function(r) {
+                            var statusClass = r.status || 'pending';
+                            var statusText = statusClass === 'pending' ? '⏳ Ожидает' : statusClass === 'approved' ? '✅ Одобрено' : '❌ Отклонено';
+                            html += '<div class="request-item">' +
+                                '<div><span class="req-user">' + r.user + '</span> предлагает <span class="req-skin">' + r.name + '</span> ' + (r.emoji || '') +
+                                (r.desc ? '<br><span style="font-size:12px;opacity:0.5;">' + r.desc + '</span>' : '') +
+                                '</div>' +
+                                '<div><span class="req-status ' + statusClass + '">' + statusText + '</span>' +
+                                (isAdmin && statusClass === 'pending' ? ' <span class="req-actions"><button class="approve" onclick="approveRequest(' + r.id + ')">✅</button><button class="reject" onclick="rejectRequest(' + r.id + ')">❌</button></span>' : '') +
+                                '</div>' +
+                            '</div>';
+                        });
+                        container.innerHTML = html;
+                    })
+                    .catch(function(e) {
+                        document.getElementById('requestsContent').innerHTML = '<div style="opacity:0.4;text-align:center;">Ошибка загрузки</div>';
+                    });
+            }
+
+            // === АНОНСЫ ===
 
             function checkAnnCode() {
                 var code = document.getElementById('annCode').value.trim();
@@ -904,6 +1032,8 @@ def main_page():
                 .catch(function(e) { showToast('❌ Ошибка', 'error'); });
             }
 
+            // === МАГАЗИН ===
+
             function buyItem(itemId) {
                 fetch('/api/buy', {
                     method: 'POST',
@@ -919,6 +1049,66 @@ def main_page():
                 })
                 .catch(function(e) { showToast('❌ Ошибка', 'error'); });
             }
+
+            // === ЗАЯВКИ НА СКИНЫ ===
+
+            function submitRequest() {
+                var name = document.getElementById('reqSkinName').value.trim();
+                var desc = document.getElementById('reqSkinDesc').value.trim();
+                var emoji = document.getElementById('reqSkinEmoji').value.trim();
+                if (!name) { showToast('❌ Введите название скина', 'error'); return; }
+                fetch('/api/request_skin', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: name, desc: desc, emoji: emoji })
+                })
+                .then(function(r) { return r.json(); })
+                .then(function(result) {
+                    if (result.success) {
+                        showToast('✅ Заявка отправлена!', 'success');
+                        closeModal('requestSkinModal');
+                        document.getElementById('reqSkinName').value = '';
+                        document.getElementById('reqSkinDesc').value = '';
+                        document.getElementById('reqSkinEmoji').value = '';
+                        loadData();
+                    } else { showToast('❌ ' + result.error, 'error'); }
+                })
+                .catch(function(e) { showToast('❌ Ошибка', 'error'); });
+            }
+
+            function approveRequest(id) {
+                fetch('/api/approve_request', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: id })
+                })
+                .then(function(r) { return r.json(); })
+                .then(function(result) {
+                    if (result.success) {
+                        showToast('✅ Заявка одобрена!', 'success');
+                        loadData();
+                    } else { showToast('❌ ' + result.error, 'error'); }
+                })
+                .catch(function(e) { showToast('❌ Ошибка', 'error'); });
+            }
+
+            function rejectRequest(id) {
+                fetch('/api/reject_request', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: id })
+                })
+                .then(function(r) { return r.json(); })
+                .then(function(result) {
+                    if (result.success) {
+                        showToast('❌ Заявка отклонена', 'info');
+                        loadData();
+                    } else { showToast('❌ ' + result.error, 'error'); }
+                })
+                .catch(function(e) { showToast('❌ Ошибка', 'error'); });
+            }
+
+            // === ВЫДАЧА ПТ ===
 
             function checkPTCode() {
                 var code = document.getElementById('ptCode').value.trim();
@@ -977,6 +1167,128 @@ def main_page():
                 })
                 .catch(function(e) { showToast('❌ Ошибка', 'error'); });
             }
+
+            // === ВЫДАЧА СКИНА ===
+
+            function checkSkinCode() {
+                var code = document.getElementById('skinCode').value.trim();
+                var status = document.getElementById('skinCodeStatus');
+                fetch('/api/settings')
+                    .then(function(r) { return r.json(); })
+                    .then(function(settings) {
+                        var correct = settings.code || '132547';
+                        if (code === correct) {
+                            status.textContent = '✅ Код верный!';
+                            status.className = 'code-status success';
+                            document.getElementById('skinUser').disabled = false;
+                            document.getElementById('skinName').disabled = false;
+                            document.getElementById('skinSubmitBtn').disabled = false;
+                            skinCodeVerified = true;
+                        } else if (code.length > 0) {
+                            status.textContent = '❌ Неверный код';
+                            status.className = 'code-status error';
+                            document.getElementById('skinUser').disabled = true;
+                            document.getElementById('skinName').disabled = true;
+                            document.getElementById('skinSubmitBtn').disabled = true;
+                            skinCodeVerified = false;
+                        } else {
+                            status.textContent = '';
+                            status.className = 'code-status';
+                            document.getElementById('skinUser').disabled = true;
+                            document.getElementById('skinName').disabled = true;
+                            document.getElementById('skinSubmitBtn').disabled = true;
+                            skinCodeVerified = false;
+                        }
+                    });
+            }
+
+            function submitSkin() {
+                if (!skinCodeVerified) { showToast('❌ Введите правильный код!', 'error'); return; }
+                var user = document.getElementById('skinUser').value.trim();
+                var name = document.getElementById('skinName').value.trim();
+                if (!user) { showToast('❌ Введите имя пользователя', 'error'); return; }
+                if (!name) { showToast('❌ Введите название скина', 'error'); return; }
+                fetch('/api/give_skin', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user: user, name: name })
+                })
+                .then(function(r) { return r.json(); })
+                .then(function(result) {
+                    if (result.success) {
+                        showToast('✅ ' + result.message, 'success');
+                        closeModal('giveSkinModal');
+                        document.getElementById('skinUser').value = '';
+                        document.getElementById('skinName').value = '';
+                        document.getElementById('skinCode').value = '';
+                        document.getElementById('skinCodeStatus').textContent = '';
+                        loadData();
+                    } else { showToast('❌ ' + result.error, 'error'); }
+                })
+                .catch(function(e) { showToast('❌ Ошибка', 'error'); });
+            }
+
+            // === ВЫДАЧА ЗВАНИЯ ===
+
+            function checkRankCode() {
+                var code = document.getElementById('rankCode').value.trim();
+                var status = document.getElementById('rankCodeStatus');
+                fetch('/api/settings')
+                    .then(function(r) { return r.json(); })
+                    .then(function(settings) {
+                        var correct = settings.code || '132547';
+                        if (code === correct) {
+                            status.textContent = '✅ Код верный!';
+                            status.className = 'code-status success';
+                            document.getElementById('rankUser').disabled = false;
+                            document.getElementById('rankName').disabled = false;
+                            document.getElementById('rankSubmitBtn').disabled = false;
+                            rankCodeVerified = true;
+                        } else if (code.length > 0) {
+                            status.textContent = '❌ Неверный код';
+                            status.className = 'code-status error';
+                            document.getElementById('rankUser').disabled = true;
+                            document.getElementById('rankName').disabled = true;
+                            document.getElementById('rankSubmitBtn').disabled = true;
+                            rankCodeVerified = false;
+                        } else {
+                            status.textContent = '';
+                            status.className = 'code-status';
+                            document.getElementById('rankUser').disabled = true;
+                            document.getElementById('rankName').disabled = true;
+                            document.getElementById('rankSubmitBtn').disabled = true;
+                            rankCodeVerified = false;
+                        }
+                    });
+            }
+
+            function submitRank() {
+                if (!rankCodeVerified) { showToast('❌ Введите правильный код!', 'error'); return; }
+                var user = document.getElementById('rankUser').value.trim();
+                var name = document.getElementById('rankName').value.trim();
+                if (!user) { showToast('❌ Введите имя пользователя', 'error'); return; }
+                if (!name) { showToast('❌ Введите название звания', 'error'); return; }
+                fetch('/api/give_rank', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user: user, name: name })
+                })
+                .then(function(r) { return r.json(); })
+                .then(function(result) {
+                    if (result.success) {
+                        showToast('✅ ' + result.message, 'success');
+                        closeModal('giveRankModal');
+                        document.getElementById('rankUser').value = '';
+                        document.getElementById('rankName').value = '';
+                        document.getElementById('rankCode').value = '';
+                        document.getElementById('rankCodeStatus').textContent = '';
+                        loadData();
+                    } else { showToast('❌ ' + result.error, 'error'); }
+                })
+                .catch(function(e) { showToast('❌ Ошибка', 'error'); });
+            }
+
+            // === НАСТРОЙКИ ===
 
             function checkSettingsCode() {
                 var code = document.getElementById('settingsCode').value.trim();
@@ -1202,6 +1514,78 @@ def api_give_pt():
     users[user]['pt'] = users[user].get('pt', 0) + amount
     save_users(users)
     return jsonify({'success': True, 'message': f'Выдано {amount} ПТ пользователю {user}'})
+
+@app.route('/api/give_skin', methods=['POST'])
+def api_give_skin():
+    req = request.json
+    user = req.get('user', '')
+    name = req.get('name', '')
+    users = load_users()
+    if user not in users:
+        return jsonify({'success': False, 'error': 'Пользователь не найден'})
+    if not name:
+        return jsonify({'success': False, 'error': 'Введите название скина'})
+    users[user]['skin'] = name
+    save_users(users)
+    return jsonify({'success': True, 'message': f'Скин "{name}" выдан пользователю {user}'})
+
+@app.route('/api/give_rank', methods=['POST'])
+def api_give_rank():
+    req = request.json
+    user = req.get('user', '')
+    name = req.get('name', '')
+    users = load_users()
+    if user not in users:
+        return jsonify({'success': False, 'error': 'Пользователь не найден'})
+    if not name:
+        return jsonify({'success': False, 'error': 'Введите название звания'})
+    users[user]['rank'] = name
+    save_users(users)
+    return jsonify({'success': True, 'message': f'Звание "{name}" выдано пользователю {user}'})
+
+@app.route('/api/requests')
+def api_requests():
+    return jsonify(load_skin_requests())
+
+@app.route('/api/request_skin', methods=['POST'])
+def api_request_skin():
+    if 'username' not in session:
+        return jsonify({'success': False, 'error': 'Войдите в систему'})
+    data = load_skin_requests()
+    req = request.json
+    request_item = {
+        'id': len(data) + 1,
+        'user': session['username'],
+        'name': req.get('name', ''),
+        'desc': req.get('desc', ''),
+        'emoji': req.get('emoji', ''),
+        'status': 'pending'
+    }
+    data.append(request_item)
+    save_skin_requests(data)
+    return jsonify({'success': True})
+
+@app.route('/api/approve_request', methods=['POST'])
+def api_approve_request():
+    data = load_skin_requests()
+    req_id = request.json.get('id')
+    for r in data:
+        if r['id'] == req_id:
+            r['status'] = 'approved'
+            save_skin_requests(data)
+            return jsonify({'success': True})
+    return jsonify({'success': False, 'error': 'Заявка не найдена'})
+
+@app.route('/api/reject_request', methods=['POST'])
+def api_reject_request():
+    data = load_skin_requests()
+    req_id = request.json.get('id')
+    for r in data:
+        if r['id'] == req_id:
+            r['status'] = 'rejected'
+            save_skin_requests(data)
+            return jsonify({'success': True})
+    return jsonify({'success': False, 'error': 'Заявка не найдена'})
 
 @app.route('/api/settings')
 def api_settings():
